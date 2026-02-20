@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_libserialport/flutter_libserialport.dart';
 
 void main() {
+  final ports = SerialPort.availablePorts;
+  print("Available ports:");
+  for (var port in ports) {
+    print(port);
+  }
   runApp(const MainApp());
 }
 
