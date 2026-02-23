@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_libserialport/flutter_libserialport.dart';
+import 'package:front_upm/home/home.dart';
 
 void main() {
-  final ports = SerialPort.availablePorts;
-  print("Available ports:");
-  for (var port in ports) {
-    print(port);
-  }
-  runApp(const MainApp());
+  runApp(const MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+      home: HomePage(), // Muestra el HomePage
     );
   }
 }
