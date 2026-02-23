@@ -18,11 +18,11 @@ class _HomePageState extends State<HomePage> {
 
     bool opened = _serial.open("COM5");
 
-    print("Puerto abierto: $opened");
+    debugPrint("Puerto abierto: $opened");
 
     if (opened) {
       _serial.stream.listen((data) {
-        print("Recibido: $data");
+        debugPrint("Recibido: $data");
         setState(() {
           _response = data;
         });

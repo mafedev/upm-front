@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'dart:typed_data';
 
@@ -9,7 +10,7 @@ class SerialService {
   _port = SerialPort(portName);
 
   if (!_port!.openReadWrite()) {
-    print("Error al abrir puerto");
+    debugPrint("Error al abrir puerto");
     return false;
   }
 
@@ -18,7 +19,7 @@ class SerialService {
   _port!.config.stopBits = 1;
   _port!.config.parity = SerialPortParity.none;
 
-  print("Puerto configurado correctamente");
+  debugPrint("Puerto configurado correctamente");
 
   _reader = SerialPortReader(_port!);
 
