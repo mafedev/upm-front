@@ -9,22 +9,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final SerialService _serial = SerialService();
-  String _response = "Sin respuesta";
+  final SerialService _serial = SerialService(); // Instancia del servicio
+  String _response = "Sin respuesta"; // Es el texto que se muestra al presionar el botón, por defecto es "sin respuesta"
 
   @override
   void initState() {
     super.initState();
 
+    // Se abre el puerto usando el método del servicio, le pasa por parámetro el puerto
     bool opened = _serial.open("COM5");
+    debugPrint("Puerto abierto: $opened"); // Debug para saber si se abrió el puerto
 
-    debugPrint("Puerto abierto: $opened");
-
+    // Si se abrió sin problemas, escucha los datos que le llegan
     if (opened) {
       _serial.stream.listen((data) {
-        debugPrint("Recibido: $data");
+        debugPrint("Recibido: $data"); // Debug para saber que datos llegaron
         setState(() {
-          _response = data;
+          _response = data; // Actualiza la interfaz mostrando lo que recibió
         });
       });
     }
@@ -32,7 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _serial.close();
+    _serial.close(); // Cierra el puerto
     super.dispose();
   }
 
@@ -41,16 +42,16 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Arduino Menu")),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20), // espaciado interno
         child: Column(
           children: [
             Text(
-              _response,
-              style: const TextStyle(fontSize: 18),
+              _response, // Datos que le llegaron
+              style: const TextStyle(fontSize: 18)
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => _serial.send("0"),
+              onPressed: () => _serial.send("0"), // Al presionar el botón envía un '0' al Arduino
               child: const Text("Leer sesiones"),
             ),
           ],
