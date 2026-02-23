@@ -49,11 +49,20 @@ class _HomePageState extends State<HomePage> {
               _response, // Datos que le llegaron
               style: const TextStyle(fontSize: 18)
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+
+            // ---------- Ver sesiones ----------
             ElevatedButton(
               onPressed: () => _serial.send("0"), // Al presionar el botón envía un '0' al Arduino
-              child: const Text("Leer sesiones"),
+              child: const Text("Sesiones disponibles"),
             ),
+
+            const SizedBox(height: 15),
+
+            // ---------- Ver número de serie ----------
+            ElevatedButton(
+              onPressed: () =>_serial.send("1"), // Al presionar el botón envia un '1' al Arduino
+            child: const Text("Número de serie"))
           ],
         ),
       ),
