@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/serial_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,6 +12,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final SerialService _serial = SerialService(); // Instancia del servicio
   String _response = "Sin respuesta"; // Es el texto que se muestra al presionar el botón, por defecto es "sin respuesta"
+  final TextEditingController _sessionsController = TextEditingController(); // Es el que permite leer el número de sesiones a cargar
 
   @override
   void initState() {
@@ -20,14 +22,23 @@ class _HomePageState extends State<HomePage> {
     bool opened = _serial.open("COM5");
     debugPrint("Puerto abierto: $opened"); // Debug para saber si se abrió el puerto
 
-    // Si se abrió sin problemas, escucha los datos que le llegan
+    // Si se abrió sin problemas
     if (opened) {
-      _serial.stream.listen((data) {
-        debugPrint("Recibido: $data"); // Debug para saber que datos llegaron
-        setState(() {
-          _response = data; // Actualiza la interfaz mostrando lo que recibió
-        });
-      });
+      _serial.stream.listen( // escucha el stream
+        (data) {
+          // Cada vez que llega algo desde el Arduino lo muestra y actualiza el texto
+          debugPrint("Recibido: $data");
+          setState(() {
+            _response = data;
+          });
+        },
+        onError: (error) {
+          debugPrint("Error en listener: $error");
+        },
+        onDone: () {
+          debugPrint("Stream cerrado");
+        },
+      );
     }
   }
 
@@ -35,6 +46,47 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _serial.close(); // Cierra el puerto
     super.dispose();
+  }
+
+  // Cargar sesiones
+  void _loadSessions() async {
+    final value = _sessionsController.text.trim(); // obtiene el número de sesiones
+
+    // Si está vacío, muestra el mensaje
+    if (value.isEmpty) {
+      setState(() {
+        _response = "Introduce un número válido";
+      });
+      return;
+    }
+
+    // Se pasa a entero
+    final int? number = int.tryParse(value);
+
+    // Si no se puede porque no es un número
+    if(number == null){
+      setState(() {
+        _response = "Solo se permiten números";
+      });
+      return;
+    }
+
+    // Para evitar que ingresen números negativos
+    if (number < 0) {
+      setState(() {
+        _response = "Introduzca valores positivos";
+      });
+      return;
+    }
+
+    // si no cumple ninguna de las anteriores, envía la contraseña
+    _serial.send("1234");
+
+    // espera un segundo para que entre en el bucle
+    await Future.delayed(const Duration(seconds: 1));
+
+    // y por último envía el número de sesiones a cargar
+    _serial.send(value);
   }
 
   @override
@@ -62,7 +114,33 @@ class _HomePageState extends State<HomePage> {
             // ---------- Ver número de serie ----------
             ElevatedButton(
               onPressed: () =>_serial.send("1"), // Al presionar el botón envia un '1' al Arduino
-            child: const Text("Número de serie"))
+            child: const Text("Número de serie")),
+            
+            const SizedBox(height: 25),
+
+            // ---------- Cargar sesiones ----------
+            const Text("Cargar sesiones", style: TextStyle(fontSize: 16)),
+
+            const SizedBox(height: 10),
+
+            // Campo de texto donde se introducen el número de sesiones a cargar
+            TextField(
+              controller: _sessionsController, // controlador que almacena el número
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "Número de sesiones",
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo permite introducir dígitos del 0 al 9
+            ),
+
+            const SizedBox(height: 10),
+
+            // Cuando se presiona el botón llama a la función para cargar las sesiones
+            ElevatedButton(
+              onPressed: _loadSessions,
+              child: const Text("Enviar sesiones"),
+            ),
           ],
         ),
       ),
