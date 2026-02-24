@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/serial_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -50,7 +51,26 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // si no está vacío, envía la contraseña
+    // Se pasa a entero
+    final int? number = int.tryParse(value);
+
+    // Si no se puede porque no es un número
+    if(number == null){
+      setState(() {
+        _response = "Solo se permiten números";
+      });
+      return;
+    }
+
+    // Para evitar que ingresen números negativos
+    if (number < 0) {
+      setState(() {
+        _response = "Introduzca valores positivos";
+      });
+      return;
+    }
+
+    // si no cumple ninguna de las anteriores, envía la contraseña
     _serial.send("1234");
 
     // espera un segundo para que entre en el bucle
@@ -102,6 +122,7 @@ class _HomePageState extends State<HomePage> {
                 border: OutlineInputBorder(),
                 labelText: "Número de sesiones",
               ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo permite introducir dígitos del 0 al 9
             ),
 
             const SizedBox(height: 10),
