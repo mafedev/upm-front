@@ -22,14 +22,23 @@ class _HomePageState extends State<HomePage> {
     bool opened = _serial.open("COM5");
     debugPrint("Puerto abierto: $opened"); // Debug para saber si se abrió el puerto
 
-    // Si se abrió sin problemas, escucha los datos que le llegan
+    // Si se abrió sin problemas
     if (opened) {
-      _serial.stream.listen((data) {
-        debugPrint("Recibido: $data"); // Debug para saber que datos llegaron
-        setState(() {
-          _response = data; // Actualiza la interfaz mostrando lo que recibió
-        });
-      });
+      _serial.stream.listen( // escucha el stream
+        (data) {
+          // Cada vez que llega algo desde el Arduino lo muestra y actualiza el texto
+          debugPrint("Recibido: $data");
+          setState(() {
+            _response = data;
+          });
+        },
+        onError: (error) {
+          debugPrint("Error en listener: $error");
+        },
+        onDone: () {
+          debugPrint("Stream cerrado");
+        },
+      );
     }
   }
 
