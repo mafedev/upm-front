@@ -1,18 +1,24 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
-// Se encarga de manejar todo lo relacionado con el puerto serial
 class SerialService {
   SerialPort? _port; // puerto abierto
-  SerialPortReader? _reader; // es el que lee los datos que envía el Arduino
+  Timer? _readTimer; // es el que lee el puerto
+
+  // Controlador que permite enviar datos al Home
+  // broadcast es para que pueda haber más de un listener escuchando
+  final StreamController<String> _controller = StreamController<String>.broadcast();
+
+  // Permiten que se escuchen los datos desde fuera
+  Stream<String> get stream => _controller.stream;
 
   // ---------- Abrir puerto ----------
   // Abre el puerto usando su nombre
   bool open(String portName) {
     _port = SerialPort(portName); // Se crea el puerto
 
-    // Se abre en rectura y escritura, si falla, muestra el mensaje y se devuelve un false
+    // Se abre en lectura y escritura, si falla, muestra el mensaje y se devuelve un false
     if (!_port!.openReadWrite()) {
       debugPrint("Error al abrir puerto");
       return false;
@@ -26,33 +32,54 @@ class SerialService {
 
     debugPrint("Puerto configurado correctamente");
 
-    // Escucha los datos entrantes, es lo que permite poder acceder a ellos como Stream
-    _reader = SerialPortReader(_port!);
+    // Se comienza a leer cada 100ms para evitar problemas
+    _startReading();
 
-    return true; // devuelve true si todo salió bien
+    return true; // indica que todo salió bien
+  }
+
+  // ---------- Lectura de los datos ----------
+  void _startReading() {
+    // timer que se ejecuta cada 100ms
+    _readTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      try {
+        // si el puerto no existe o no está abierto, sale
+        if (_port == null || !_port!.isOpen) return;
+        
+        final bytes = _port!.read(1024);
+
+        // si llegaron datos
+        if (bytes.isNotEmpty) {
+          // se convierten de bytes a texto
+          final text = String.fromCharCodes(bytes).trim();
+
+          // si no está vacío
+          if (text.isNotEmpty) {
+            debugPrint("Recibido: $text"); // muestra lo que recibió
+            _controller.add(text); // envia el texto al stream para que lo muestre el Home
+          }
+        }
+      } catch (e) {
+        debugPrint("Error en el puerto: $e");
+      }
+    });
   }
 
   // ---------- Enviar datos ----------
   void send(String data) {
-    final message = "$data\n"; // Agrega un salto de línea al final
-    // Luego convierte cada crácter en su valor ASCII, y convierte esa lista en un tipo que Flutter pueda enviar por el puerto
-    final bytes = Uint8List.fromList(message.codeUnits);
-    _port!.write(bytes); // envía los bytes
+    // Al igual que antes, si no existe o no está abierto, sale
+    if (_port == null || !_port!.isOpen) return;
+
+    final message = "$data\n"; // Agrega el salto de línea al final
+    final bytes = Uint8List.fromList(message.codeUnits); // se pasa el texto a bytes
+
+    _port!.write(bytes); // escribe y envía los bytes
   }
 
-  // ---------- Lectura de datos ----------
-  // Escucha los datos entrantes
-  Stream<String> get stream async* {
-    if (_reader == null) return; // si no hay reader se sale
-    // Si hay datos, los lee en bytes y los pasa a String
-    await for (final data in _reader!.stream) {
-      yield String.fromCharCodes(data);
-    }
-  }
-
-  // Cierra el puerto y el lector cuando ya no se usan
+  // Cierra todo cuando ya no se usa
   void close() {
-    _reader?.close();
-    _port?.close();
+    _readTimer?.cancel(); // se detiene el timer
+    _controller.close(); // se cierra el stream
+    _port?.close(); // cierra el puerto
   }
 }
