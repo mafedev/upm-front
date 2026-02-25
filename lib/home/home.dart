@@ -18,8 +18,22 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    // se obtiene la lista de puertos disponibles
+    final ports = _serial.getAvailablePorts();
+    debugPrint("Puertos disponibles: $ports");
+
+    // si no hay puertos disponibles muestra el mensaje y sale
+    if(ports.isEmpty){
+      debugPrint("No se detectaron puertos disponibles");
+      return;
+    }
+
+    // si hay puertos, se toma el último
+    final lastPort = ports.last;
+    debugPrint("Último puerto: $lastPort");
+    
     // Se abre el puerto usando el método del servicio, le pasa por parámetro el puerto
-    bool opened = _serial.open("COM5");
+    bool opened = _serial.open(lastPort);
     debugPrint("Puerto abierto: $opened"); // Debug para saber si se abrió el puerto
 
     // Si se abrió sin problemas

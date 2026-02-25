@@ -76,6 +76,11 @@ class SerialService {
     _port!.write(bytes); // escribe y envía los bytes
   }
 
+  // Devuelve la lista de puertos dispopnibles
+  List<String> getAvailablePorts() {
+    return SerialPort.availablePorts;
+  }
+
   // Cierra todo cuando ya no se usa
   void close() {
     _readTimer?.cancel(); // se detiene el timer
