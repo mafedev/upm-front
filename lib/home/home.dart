@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/serial_service.dart';
+import '../services/ble_service.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -11,7 +11,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   
-  final SerialService _serial = SerialService(); // Instancia del servicio
+  final BleService _ble = BleService(); // Instancia del servicio
 
   // Variables separadas para cada respuesta, permite actualizarlas de manera independiente
   String _sessions = "Sin respuesta"; // Muestra solo las sesiones disponibles
@@ -24,91 +24,49 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
 
-    // Obtiene la lista de puertos disponibles
-    final ports = _serial.getAvailablePorts();
-    debugPrint("Puertos disponibles: $ports");
+    _ble.connect();
 
-    // si no hay puertos disponibles muestra el mensaje y sale
-    if(ports.isEmpty){
-      debugPrint("No se detectaron puertos disponibles");
-      return;
-    }
-
-    // si hay puertos, se toma el último
-    final lastPort = ports.last;
-    debugPrint("Último puerto: $lastPort");
-    
-    // Se abre el puerto usando el método del servicio, le pasa por parámetro el puerto
-    bool opened = _serial.open(lastPort);
-    debugPrint("Puerto abierto: $opened"); // Debug para saber si se abrió el puerto
-
-    // Si se abrió sin problemas
-    if (opened) {
-      _serial.stream.listen( // escucha el stream
-        (data) {
-          debugPrint("Recibido: $data");
-        },
-        onError: (error) {
-          debugPrint("Error en listener: $error");
-        },
-        onDone: () {
-          debugPrint("Stream cerrado");
-        },
-      );
-    }
+    _ble.stream.listen((data) {
+      setState(() {
+        if (data.startsWith("Sesiones:")) {
+          _sessions = data;
+        } else if (data.startsWith("Serie:")) {
+          _serialNumber = data;
+        } else {
+          _recharge = data;
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
-    _serial.close(); // Cierra el puerto
+    _ble.disconnect();
     super.dispose();
   }
 
   // ---------- Cargar sesiones ----------
-  void _loadSessions() async {
-    final value = _sessionsController.text.trim(); // obtiene el número de sesiones
+  void _loadSessions() {
+  final value = _sessionsController.text.trim();
 
-    // Si está vacío, muestra el mensaje
-    if (value.isEmpty) {
-      setState(() {
-        _recharge = "Introduce un número válido";
-      });
-      return;
-    }
-
-    // Se pasa a entero
-    final int? number = int.tryParse(value);
-
-    // Si no se puede porque no es un número
-    if(number == null){
-      setState(() {
-        _recharge = "Solo se permiten números";
-      });
-      return;
-    }
-
-    // Para evitar que ingresen números negativos
-    if (number < 0) {
-      setState(() {
-        _recharge = "Introduzca valores positivos";
-      });
-      return;
-    }
-
-    // si no cumple ninguna de las anteriores, envía la contraseña
-    _serial.send("1234");
-
-    // espera un segundo para que entre en el bucle
-    await Future.delayed(const Duration(seconds: 1));
-
-    // y por último envía el número de sesiones a cargar
-    _serial.send(value);
-
-    // Muestra un mensaje de éxito
+  if (value.isEmpty) {
     setState(() {
-      _recharge = "¡Recargado con éxito!";
+      _recharge = "Introduce un número válido";
     });
+    return;
   }
+
+  final int? number = int.tryParse(value);
+
+  if (number == null || number < 0) {
+    setState(() {
+      _recharge = "Número inválido";
+    });
+    return;
+  }
+
+  _ble.send("LOAD:$number");
+}
 
   @override
   Widget build(BuildContext context) {
@@ -123,10 +81,10 @@ class _HomeState extends State<Home> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    _serial.send("0"); // Al presionar el botón envía un '0' al Arduino
+                    _ble.send("0"); // Al presionar el botón envía un '0' al Arduino
 
                     // escucha la respuesta del stream
-                    _serial.stream.first.then((data) {
+                    _ble.stream.first.then((data) {
                       setState(() {
                         _sessions = data;
                       });
@@ -145,9 +103,9 @@ class _HomeState extends State<Home> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    _serial.send("1"); // Al presionar el botón envia un '1' al Arduino
+                    _ble.send("1"); // Al presionar el botón envia un '1' al Arduino
 
-                    _serial.stream.first.then((data){
+                    _ble.stream.first.then((data){
                       setState(() {
                         _serialNumber = data;
                       });
