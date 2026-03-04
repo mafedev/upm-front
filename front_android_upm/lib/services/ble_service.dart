@@ -25,22 +25,37 @@ class BleService {
 
   // ------------ Conecta al dispositivo BLE ------------
   Future<void> connect() async {
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5)); // Busca dispositivos durante 5 segundos
 
-    // Escucha los dispositivos encontrados
-    FlutterBluePlus.scanResults.listen((results) async {
-      for (ScanResult r in results) { // Itera sobre los dispositivos encontrados
-        // Si encuentra el dispositivo con el nombre "CTB-UPM", se conecta a él
-        if (r.device.name == "CTB-UPM") {
-          await FlutterBluePlus.stopScan(); // Como ya encontró el dispositivo, deja de buscar
-          _device = r.device; // Guarda el dispositivo encontrado
-          await _device!.connect(); // Se conecta al Arduino
-          await _discoverServices(); // Luego de conectarse busca los servicios y características para poder enviar y recibir datos
-          break;
-        }
+  await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+
+  ScanResult? target;
+
+  await for (var results in FlutterBluePlus.scanResults) {
+    for (ScanResult r in results) {
+      if (r.device.name == "CTB-UPM") {
+        target = r;
+        break;
       }
-    });
+    }
+    if (target != null) break;
   }
+
+  if (target == null) {
+    print("No se encontró el dispositivo");
+    return;
+  }
+
+  await FlutterBluePlus.stopScan();
+
+  _device = target.device;
+
+  await _device!.connect();
+  print("Conectado al dispositivo");
+
+  await _discoverServices();
+
+  print("Servicios descubiertos");
+}
 
   // ------------ Descubre servicios y características ------------
   // En BLE los datos no se envían directamente, sino a través de características, entonces después de conectarse se tienen que descubrir qué características tiene para poder enviar y recibir datos
@@ -55,6 +70,8 @@ class BleService {
       if (service.uuid == serviceUuid) {
         // Itera las características
         for (var characteristic in service.characteristics) {
+          print("Servicio: ${service.uuid}");
+          print("Characteristic: ${characteristic.uuid}");
 
           // Si encuentra la característica para enviar comandos, la guarda 
           if (characteristic.uuid == commandUuid) {
@@ -63,6 +80,9 @@ class BleService {
 
           // Si encuentra la característica para recibir respuestas, la guarda y se suscribe a ella para escuchar los datos que envía el Arduino
           if (characteristic.uuid == responseUuid) {
+            print("Servicio encontrado: ${service.uuid}");
+            print("Characteristic encontrada: ${characteristic.uuid}");
+
             _responseChar = characteristic;
             await _responseChar!.setNotifyValue(true); // activa las notificaciones para poder recibir los datos automáticamente
             
@@ -79,12 +99,17 @@ class BleService {
 
   // ------------ Envíar datos al Arduino ------------
   Future<void> send(String message) async {
-    if (_commandChar == null) return; // Si no ha encontrado la característica, no hace nada
-
-    // Si ya la encontró, pasa el mensaje a bytes y lo envía
-    // withoutResponse significa que espera la confirmación
-    await _commandChar!.write(utf8.encode(message), withoutResponse: false);
+  if (_commandChar == null) {
+    print("No conectado aún");
+    return;
   }
+
+  print("Enviando: $message");
+  await _commandChar!.write(
+    utf8.encode(message),
+    withoutResponse: false,
+  );
+}
 
   // ------------ Desconecta del dispositivo BLE ------------
   Future<void> disconnect() async {
