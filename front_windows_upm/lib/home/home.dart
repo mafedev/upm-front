@@ -113,83 +113,192 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Arduino Menu")),
-      body: Padding(
-        padding: const EdgeInsets.all(20), // espaciado interno
-        child: Column(
-          children: [
-            // ---------- Ver sesiones ----------
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _serial.send("0"); // Al presionar el botón envía un '0' al Arduino
-
-                    // escucha la respuesta del stream
-                    _serial.stream.first.then((data) {
-                      setState(() {
-                        _sessions = data;
-                      });
-                    });
-                  },
-                  child: const Text("Sesiones disponibles"),
+      appBar: AppBar(
+        title: const Text("Panel de Control - Arduino", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20)),
+        centerTitle: true,
+      ),
+      body: Container(
+        color: const Color(0xFFF5F7FA),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              
+              // ---------- Ver sesiones ----------
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF004FA8).withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 20),
-                Text(_sessions, style: const TextStyle(fontSize: 18)),
-              ],
-            ),
-            const SizedBox(height: 15),
+                child: Row(
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0066CC),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        _serial.send("0"); // envía el 0 al Arduino
 
-            // ---------- Ver número de serie ----------
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _serial.send("1"); // Al presionar el botón envia un '1' al Arduino
-
-                    _serial.stream.first.then((data){
-                      setState(() {
-                        _serialNumber = data;
-                      });
-                    });
-                  },
-                  child: const Text("Número de serie"),
+                        _serial.stream.first.then((data) {
+                          setState(() {
+                            _sessions = data;
+                          });
+                        });
+                      },
+                      child: const Text("Sesiones disponibles", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF0066CC), width: 1),
+                        ),
+                        child: Text(_sessions, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004FA8))),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 20),
-                Text(_serialNumber, style: const TextStyle(fontSize: 18)),
-              ],
-            ),
-            const SizedBox(height: 25),
-
-            // ---------- Recargar sesiones ----------
-            const Text("Cargar sesiones", style: TextStyle(fontSize: 16)),
-
-            const SizedBox(height: 10),
-
-            // Campo de texto donde se introducen el número de sesiones a cargar
-            TextField(
-              controller: _sessionsController, // controlador que almacena el número
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: "Número de sesiones",
               ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo permite introducir dígitos del 0 al 9
-            ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                // Cuando se presiona el botón llama a la función para cargar las sesiones
-                ElevatedButton(
-                  onPressed: _loadSessions,
-                  child: const Text("Enviar sesiones"),
+              // ---------- Ver número de serie ----------
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF004FA8).withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 20),
-                Text(_recharge, style: const TextStyle(fontSize: 18)),
-              ],
-            ),
-          ],
+                child: Row(
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0066CC),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        _serial.send("1"); // envía el 1 al Arduino
+
+                        _serial.stream.first.then((data){
+                          setState(() {
+                            _serialNumber = data;
+                          });
+                        });
+                      },
+                      child: const Text("Número de serie", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF0066CC), width: 1),
+                        ),
+                        child: Text(_serialNumber, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004FA8))),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // ---------- Recargar sesiones ----------
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF004FA8).withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Cargar nuevas sesiones", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF004FA8))),
+
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: _sessionsController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF0066CC), width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF004FA8), width: 2),
+                        ),
+                        labelText: "Número de sesiones",
+                        labelStyle: const TextStyle(color: Color(0xFF0066CC)),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7FA),
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00A86B),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: _loadSessions,
+                          child: const Text("Enviar sesiones", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F8F5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(_recharge, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF004FA8))),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
