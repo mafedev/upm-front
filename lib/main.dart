@@ -8,7 +8,7 @@ void main() async {
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = WindowOptions(
-    size: Size(900, 900),
+    size: Size(900, 850),
     minimumSize: Size(900, 650),
     center: true,
     title: "CTB-UPM",

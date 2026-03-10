@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
 import '../models/datos.dart';
 import 'input_screen.dart';
-import 'logs_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final SerialService serialService;
@@ -39,23 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('CTB-UPM'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.list),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      LogsScreen(serialService: widget.serialService),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('CTB-UPM')),
       body: IndexedStack(
         index: _currentIndex,
         children: [_homeTab(), _adminTab()],
