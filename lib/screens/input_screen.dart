@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
 
@@ -8,12 +7,7 @@ class InputScreen extends StatefulWidget {
   final int command;
   final String label;
 
-  const InputScreen({
-    super.key,
-    required this.serialService,
-    required this.command,
-    required this.label,
-  });
+  const InputScreen({super.key, required this.serialService, required this.command, required this.label});
 
   @override
   State<InputScreen> createState() => _InputScreenState();
@@ -27,37 +21,27 @@ class _InputScreenState extends State<InputScreen> {
     String input = _controller.text.trim();
     if (input.isEmpty) return;
 
-    // Enviar comando primero
     widget.serialService.send(widget.command.toString());
 
-    // Escuchar prompt del Arduino y enviar el dato cuando aparezca
     _sub = widget.serialService.stream.listen((line) {
       final l = line.toLowerCase();
-      if (l.contains('introduce numero') ||
-          l.contains('introduzca numero') ||
-          l.contains('introduce')) {
-        widget.serialService.sendWithTerminator(input, terminator: '\r\n');
+      if (l.contains('introduce')) {
+        widget.serialService.send(input, terminator: '\r\n');
         _sub?.cancel();
-        _sub = null;
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Dato enviado')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dato enviado')));
           Navigator.pop(context);
         }
       }
     });
 
-    // Fallback: si no llega el prompt en 2s, enviar de todas formas
+    // fallback en 2 segundos
     Future.delayed(Duration(seconds: 2), () {
       if (_sub != null) {
-        widget.serialService.sendWithTerminator(input, terminator: '\r\n');
+        widget.serialService.send(input, terminator: '\r\n');
         _sub?.cancel();
-        _sub = null;
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Dato enviado (fallback)')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dato enviado (fallback)')));
           Navigator.pop(context);
         }
       }
@@ -72,22 +56,9 @@ class _InputScreenState extends State<InputScreen> {
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                labelText: widget.label,
-                border: OutlineInputBorder(),
-              ),
-            ),
+            TextField(controller: _controller, decoration: InputDecoration(labelText: widget.label, border: OutlineInputBorder())),
             SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _sendData,
-              icon: Icon(Icons.send),
-              label: Text('Enviar', style: TextStyle(fontSize: 18)),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-              ),
-            ),
+            ElevatedButton.icon(onPressed: _sendData, icon: Icon(Icons.send), label: Text('Enviar'), style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50))),
           ],
         ),
       ),

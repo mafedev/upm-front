@@ -7,7 +7,6 @@ class Datos {
 
   factory Datos.empty() => Datos(sesiones: 0, total: 0, serial: 'Sin configurar');
 
-  // Actualiza datos desde una línea de Serial
   void updateFromString(String line) {
     line = line.trim();
     if (line.startsWith('Sesiones restantes:')) {
