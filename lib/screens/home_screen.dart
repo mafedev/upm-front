@@ -16,6 +16,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Datos datos = Datos.empty();
   int _currentIndex = 0;
   bool _authenticated = false;
+  bool _showPassword = false;
+
   final TextEditingController _passwordController = TextEditingController();
 
   @override
@@ -128,34 +130,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _adminTab() {
     if (!_authenticated) {
-      return Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Ingrese la contraseña para acceder',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Contraseña',
+      return Center(
+        child: Container(
+          width: 350,
+          padding: EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.admin_panel_settings, size: 60, color: Colors.indigo),
+              SizedBox(height: 10),
+              Text(
+                "Acceso Administrador",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-            ),
-            SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _checkPassword,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('Entrar', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                obscureText: !_showPassword,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Contraseña',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _showPassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showPassword = !_showPassword;
+                      });
+                    },
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _checkPassword,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('Entrar', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -281,18 +303,49 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _card(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: color),
-        title: Text(title, style: TextStyle(fontSize: 16)),
-        trailing: Text(
-          value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+Widget _card(String title, String value, IconData icon, Color color) {
+  return Card(
+    margin: EdgeInsets.symmetric(vertical: 10),
+    child: Padding(
+      padding: EdgeInsets.all(18),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 30, color: color),
+          ),
+
+          SizedBox(width: 15),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

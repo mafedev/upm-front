@@ -5,7 +5,7 @@ class Datos {
 
   Datos({required this.sesiones, required this.total, required this.serial});
 
-  factory Datos.empty() => Datos(sesiones: 0, total: 0, serial: 'NO_CONFIG');
+  factory Datos.empty() => Datos(sesiones: 0, total: 0, serial: 'Sin configurar');
 
   // Actualiza datos desde una línea de Serial
   void updateFromString(String line) {
@@ -16,7 +16,7 @@ class Datos {
       total = int.tryParse(line.split(':').last.trim()) ?? total;
     } else if (line.startsWith('Numero serie:')) {
       serial = line.split(':').last.trim();
-      if (serial.isEmpty) serial = 'NO_CONFIG';
+      if (serial.isEmpty) serial = 'Sin configurar';
     }
   }
 }
