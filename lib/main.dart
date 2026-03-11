@@ -18,7 +18,7 @@ void main() async {
 
     // Configura las opciones de la ventana, como el tamaño, el título, etc
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(900, 850), // tamaño inicial de la ventana
+      size: Size(900, 700), // tamaño inicial de la ventana
       minimumSize: Size(900, 650), // tamaño mínimo de la ventana
       center: true, // centra la ventana en la pantalla
       title: "CTB-UPM", // título de la ventana
@@ -34,14 +34,25 @@ void main() async {
   // Inicializa el servicio de comunicación serial, que se encargará de manejar la comunicación con el dispositivo conectado por puerto serie
   final serialService = SerialService();
 
-  // Ejecuta la app
-  runApp(MainApp(serialService: serialService));
+  // Detecta el puerto automáticamente
+  String puertoDetectado = "No detectado";
+  final ports = serialService.getAvailablePorts();
+  if (ports.isNotEmpty) {
+    puertoDetectado = ports.first.split(' - ').first.trim();
+    serialService.open(puertoDetectado);
+  }
+
+  runApp(MainApp(
+    serialService: serialService, // pasa el servicio
+    puertoArduino: puertoDetectado, // pasa el puerto detectado
+  ));
 }
 
 class MainApp extends StatefulWidget {
   final SerialService serialService;
+  final String puertoArduino; // puerto detectado para mostrar en la UI
 
-  const MainApp({super.key, required this.serialService});
+  const MainApp({super.key, required this.serialService, required this.puertoArduino});
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -50,31 +61,16 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int index = 0; // índice para controlar la pantalla actual, 0 para HomeScreen y 1 para AdminScreen
 
-  @override
-  void initState() {
-    super.initState();
-    _initSerialPort();
-  }
-
-  // ---------- Abrir puerto ----------
-  //  Detecta y abre el primer puerto serie que encuentra 
-  void _initSerialPort() {
-    final ports = widget.serialService.getAvailablePorts(); // obtiene la lista de puertos serie disponibles
-    debugPrint('Puertos detectados: $ports'); // imprime en la consola los puertos detectados, debug
-
-    if (ports.isEmpty) return; // si no hay puertos disponibles, no hace nada
-
-    String portName = ports.first.split(' - ').first.trim(); // obtiene el nombre del primer puerto disponible, asumiendo que el formato es "COM3 - Dispositivo XYZ", se queda solo con "COM3"
-    widget.serialService.open(portName); // intenta abrir el puerto serie con el nombre obtenido
-  }
-
 
   @override
   Widget build(BuildContext context) {
 
     // Lista de pantallas disponibles, se pasa el servicio de comunicación serial a cada una para que puedan usarlo
     final screens = [
-      HomeScreen(serialService: widget.serialService),
+      HomeScreen(
+        serialService: widget.serialService,
+        puertoArduino: widget.puertoArduino,
+      ),
       AdminScreen(serialService: widget.serialService),
     ];
 
@@ -88,7 +84,6 @@ class _MainAppState extends State<MainApp> {
       ),
 
       home: Scaffold(
-        appBar: AppBar(title: const Text("CTB-UPM")),
         body: screens[index], // muestra la pantalla correspondiente al índice actual
         // ---------- Navbar ----------
         bottomNavigationBar: MainNavbar(
