@@ -1,68 +1,66 @@
 import 'dart:async';
-import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flserial/flserial.dart';
 
 class SerialService {
-  SerialPort? _port;
-  Timer? _readTimer;
+  FlSerial? _serial;
+  bool _opened = false;
 
   final StreamController<String> _controller =
       StreamController<String>.broadcast();
   Stream<String> get stream => _controller.stream;
 
-  bool open(String portName) {
-    _port = SerialPort(portName);
-    if (!_port!.openReadWrite()) {
-      debugPrint("Error al abrir puerto");
-      return false;
-    }
-
-    _port!.config.baudRate = 9600;
-    _port!.config.bits = 8;
-    _port!.config.stopBits = 1;
-    _port!.config.parity = SerialPortParity.none;
-
-    _startReading();
-    debugPrint("Puerto configurado correctamente");
-    return true;
+  /// Lista los nombres de puertos disponibles
+  List<String> getAvailablePorts() {
+    return FlSerial.listPorts();
   }
 
-  void _startReading() {
-    _readTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      if (_port == null || !_port!.isOpen) return;
-      try {
-        final bytes = _port!.read(1024);
-        if (bytes.isNotEmpty) {
+  /// Abre el puerto (no async)
+  bool open(String portName, {int baudRate = 9600}) {
+    try {
+      _serial = FlSerial();
+      _serial!.init();
+      _serial!.openPort(portName, baudRate);
+
+      // Escuchar datos
+      _serial!.onSerialData.stream.listen((args) {
+        if (args.len > 0) {
+          final bytes = args.serial.readList();
           final text = String.fromCharCodes(bytes).trim();
           if (text.isNotEmpty) _controller.add(text);
         }
-      } catch (e) {
-        debugPrint("Error en puerto: $e");
-      }
-    });
+      });
+
+      _opened = true;
+      debugPrint("Puerto abierto: $portName");
+      return true;
+    } catch (e) {
+      debugPrint("Error abriendo puerto: $e");
+      return false;
+    }
   }
 
-  void send(String data) {
-    if (_port == null || !_port!.isOpen) return;
-    final message = "$data\n";
-    final bytes = Uint8List.fromList(message.codeUnits);
-    _port!.write(bytes);
+  /// Envía datos
+  void send(String data, {String terminator = '\n'}) {
+    if (!_opened || _serial == null) return;
+    final msg = '$data$terminator';
+    final bytes = Uint8List.fromList(msg.codeUnits);
+    try {
+      _serial!.write(bytes);
+    } catch (e) {
+      debugPrint("Error enviando datos: $e");
+    }
   }
 
-  /// Send a string with a custom terminator (e.g. '\r\n').
-  void sendWithTerminator(String data, {String terminator = '\n'}) {
-    if (_port == null || !_port!.isOpen) return;
-    final message = '$data$terminator';
-    final bytes = Uint8List.fromList(message.codeUnits);
-    _port!.write(bytes);
-    debugPrint('SerialService: sent (${bytes.length}) bytes: $message');
-  }
-
-  List<String> getAvailablePorts() => SerialPort.availablePorts;
-
+  /// Cierra el puerto
   void close() {
-    _readTimer?.cancel();
-    _controller.close();
-    _port?.close();
+    if (!_opened || _serial == null) return;
+    try {
+      _serial!.closePort();
+      _serial!.free();
+    } catch (e) {
+      debugPrint("Error cerrando puerto: $e");
+    }
+    _opened = false;
   }
 }
