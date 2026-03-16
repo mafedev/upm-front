@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
-
 import 'services/serial_service.dart';
+import 'services/session_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_screen.dart';
 import 'widgets/navbar.dart';
@@ -33,10 +33,14 @@ void main() async {
 
   // Inicializa el servicio de comunicación serial, que se encargará de manejar la comunicación con el dispositivo conectado por puerto serie
   final serialService = SerialService();
+  // Se encarga de manejar la sesión, para que si se cambia de pestaña, no se cierre la sesión
+  final sessionService = SessionService();
 
   // Detecta el puerto automáticamente
   String puertoDetectado = "No detectado";
   final ports = serialService.getAvailablePorts();
+
+  // Si se detecta al menos un puerto, se toma el primero y se abre la comunicación serial con ese puerto
   if (ports.isNotEmpty) {
     puertoDetectado = ports.first.split(' - ').first.trim();
     serialService.open(puertoDetectado);
@@ -44,15 +48,17 @@ void main() async {
 
   runApp(MainApp(
     serialService: serialService, // pasa el servicio
+    sessionService: sessionService, // pasa el servicio de sesión
     puertoArduino: puertoDetectado, // pasa el puerto detectado
   ));
 }
 
 class MainApp extends StatefulWidget {
-  final SerialService serialService;
+  final SerialService serialService; // comunicación con el arduino
+  final SessionService sessionService; // manejo de sesión
   final String puertoArduino; // puerto detectado para mostrar en la UI
 
-  const MainApp({super.key, required this.serialService, required this.puertoArduino});
+  const MainApp({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -60,7 +66,6 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   int index = 0; // índice para controlar la pantalla actual, 0 para HomeScreen y 1 para AdminScreen
-
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +76,11 @@ class _MainAppState extends State<MainApp> {
         serialService: widget.serialService,
         puertoArduino: widget.puertoArduino,
       ),
-      AdminScreen(serialService: widget.serialService),
+
+      AdminScreen(
+        serialService: widget.serialService,
+        sessionService: widget.sessionService,
+      ),
     ];
 
     return MaterialApp(
@@ -84,7 +93,10 @@ class _MainAppState extends State<MainApp> {
       ),
 
       home: Scaffold(
-        body: screens[index], // muestra la pantalla correspondiente al índice actual
+        
+        // IndexedStack es un widget que muestra solo un hijo a la vez, pero mantiene el estado de todos los hijos, lo que es útil para mantener la sesión iniciada al cambiar de pantalla
+        body: IndexedStack(index: index, children: screens),
+
         // ---------- Navbar ----------
         bottomNavigationBar: MainNavbar(
           currentIndex: index, // índice actual para resaltar el botón correspondiente
