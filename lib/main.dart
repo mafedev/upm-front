@@ -79,7 +79,7 @@ class _MainAppState extends State<MainApp> {
 
       AdminScreen(
         serialService: widget.serialService,
-        sessionService: widget.sessionService,
+        sessionService: widget.sessionService, puertoArduino: widget.puertoArduino,
       ),
     ];
 
