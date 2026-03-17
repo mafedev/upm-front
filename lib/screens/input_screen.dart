@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/serial_service.dart';
 
 class InputScreen extends StatefulWidget {
@@ -59,14 +60,17 @@ class _InputScreenState extends State<InputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF1E88E5),
+        iconTheme: const IconThemeData(color: Colors.white), // flecha de back blanca
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
         title: Row(
           children: const [
             Icon(Icons.medical_services, size: 32),
             SizedBox(width: 10),
-            Text("CTB-UPM", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text("CTB-UPM"),
           ],
         ),
-        backgroundColor: const Color(0xFF1E88E5),
+        systemOverlayStyle: SystemUiOverlayStyle.light, // para que el color de los iconos de la barra de estado sean blancos
       ),
       backgroundColor: const Color(0xFFE3F2FD),
       body: Center(

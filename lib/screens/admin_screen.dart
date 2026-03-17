@@ -7,9 +7,9 @@ class AdminScreen extends StatefulWidget {
 
   final SerialService serialService; // servicio de comunicación serial, se pasa desde la pantalla principal para que pueda usarlo
   final SessionService sessionService; // servicio de manejo de sesión
+  final String puertoArduino; // puerto detectado para mostrar en la UI
 
-  const AdminScreen({super.key, required this.serialService, required this.sessionService,
-});
+  const AdminScreen({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();
@@ -92,31 +92,6 @@ class _AdminScreenState extends State<AdminScreen> {
     final authenticated = widget.sessionService.authenticated;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: const [
-            Icon(Icons.medical_services, size: 32, color: Colors.white),
-            SizedBox(width: 10),
-            Text(
-              "CTB-UPM",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF1E88E5),
-        actions: authenticated
-            ? [
-                // Si la sesión está autenticada, muestra el botón de cerrar sesión en la barra de navegación
-                IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  onPressed: logout,
-                ),
-              ]
-            : null,
-      ),
 
       backgroundColor: const Color(0xFFE3F2FD),
 
@@ -197,32 +172,67 @@ class _AdminScreenState extends State<AdminScreen> {
 
   // ---------- Panel de administración ----------
   Widget _buildAdminPanel() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Título de la página
-          const Text(
-            "Panel de Administración",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E88E5),
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E88E5),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
           ),
+          child: Row(
+            children: [
+              const Icon(Icons.medical_services, color: Colors.white, size: 40),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "CTB-UPM",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      "Panel de administrador",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Puerto Arduino: ${widget.puertoArduino}",
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: logout,
+              ),
+            ],
+          ),
+        ),
 
-          const SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-          // ---------- Botones ----------
-          Expanded( // expande para ocupar el espacio disponible
+        // ---------- Botones ----------
+        Expanded( // expande para ocupar el espacio disponible
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: GridView( // vista de cuadricula para los botones
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount( // estructura de la cuadrícula
                 crossAxisCount: 2, // columnas
                 crossAxisSpacing: 15, // espacio entre columnas
                 mainAxisSpacing: 15, // espacio entre filas
-                childAspectRatio: 4, // tamaño
+                childAspectRatio: 2, // tamaño
               ),
 
               children: [
@@ -252,8 +262,8 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -279,12 +289,22 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
 
         // Contenido del botón, con un icono y un texto, centrados
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Colors.white, size: 32),
-            const SizedBox(width: 12),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
