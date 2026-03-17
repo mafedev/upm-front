@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
     // Si no se ha detectado ningún puerto, muestra un mensaje de error en la pantalla
     return Container(
       decoration: const BoxDecoration(
@@ -79,41 +78,43 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   // ---------- Cards con datos ----------
-                  Row(
+                  Column(
                     children: [
-                      Expanded(
-                        child: _statCard("Sesiones restantes", datos.sesionesStr, Icons.timer, const Color(0xFF1E88E5)),
+                      _dataRow(
+                        title: "Sesiones restantes",
+                        value: datos.sesionesStr,
+                        icon: Icons.timer,
+                        color: const Color(0xFF1E88E5),
+                        command: '2',
                       ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: _statCard("Total sesiones", datos.totalStr, Icons.list_alt, const Color(0xFF2E7D32)),
+                      const SizedBox(height: 15),
+
+                      _dataRow(
+                        title: "Total sesiones",
+                        value: datos.totalStr,
+                        icon: Icons.list_alt,
+                        color: const Color(0xFF2E7D32),
+                        command: '5',
                       ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: _statCard("Número de serie", datos.serial, Icons.qr_code, const Color(0xFF0D47A1)),
+                      const SizedBox(height: 15),
+
+                      _dataRow(
+                        title: "Número de serie",
+                        value: datos.serial,
+                        icon: Icons.qr_code,
+                        color: const Color(0xFF0D47A1),
+                        command: '3',
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 30),
-
-                  // ---------- Botones ----------
-                  Wrap(
-                    spacing: 15,
-                    runSpacing: 15,
-                    children: [
-                      _actionButton("Leer sesiones", Icons.refresh, const Color(0xFF1E88E5), '2'), 
-                      _actionButton("Leer sesiones totales", Icons.analytics, const Color(0xFF2E7D32), '5'),
-                      _actionButton("Leer número de serie", Icons.badge, const Color(0xFF0D47A1), '3'),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -123,43 +124,62 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shadowColor: Colors.grey.withOpacity(0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(width: 15),
-            Column(
+  Widget _dataRow({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required String command,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 5),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 35),
+          const SizedBox(width: 10),
+
+          // Texto (ocupa todo el espacio posible)
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.grey)),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                ),
                 const SizedBox(height: 5),
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
 
-  Widget _actionButton(String label, IconData icon, Color color, String command) {
-    return SizedBox(
-      width: 200,
-      height: 50,
-      child: ElevatedButton.icon(
-        icon: Icon(icon, color: Colors.white),
-        label: Text(label, style: const TextStyle(color: Colors.white)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        onPressed: () => widget.serialService.send(command),
+          const SizedBox(width: 10),
+
+          // --------- BOTÓN ----------
+          ElevatedButton(
+            onPressed: () => widget.serialService.send(command),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Icon(Icons.refresh, color: Colors.white),
+          ),
+        ],
       ),
     );
   }
