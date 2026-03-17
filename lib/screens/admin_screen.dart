@@ -222,7 +222,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 crossAxisCount: 2, // columnas
                 crossAxisSpacing: 15, // espacio entre columnas
                 mainAxisSpacing: 15, // espacio entre filas
-                childAspectRatio: 4, // tamaño
+                childAspectRatio: 2, // tamaño
               ),
 
               children: [
@@ -279,12 +279,22 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
 
         // Contenido del botón, con un icono y un texto, centrados
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Colors.white, size: 32),
-            const SizedBox(width: 12),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
