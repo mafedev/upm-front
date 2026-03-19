@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MainNavbar extends StatelessWidget {
   final int currentIndex;
-  final Function(int) onTap;
+  final ValueChanged<int> onTap; // tipo más específico para claridad
 
   const MainNavbar({
     super.key,
@@ -13,11 +13,14 @@ class MainNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: currentIndex, // índice actual para resaltar el botón correspondiente
+      currentIndex: currentIndex,
       onTap: onTap,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"), // botón para la pantalla principal, con un icono de casa
-        BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings),label: "Admin"), // segudno botón para la parte de admin
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.admin_panel_settings),
+          label: "Admin",
+        ),
       ],
     );
   }

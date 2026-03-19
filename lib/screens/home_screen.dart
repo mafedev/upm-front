@@ -4,7 +4,7 @@ import '../models/datos.dart';
 
 class HomeScreen extends StatefulWidget {
   final SerialService serialService;
-  final String puertoArduino; // puerto detectado para mostrar en la UI
+  final String puertoArduino;
 
   const HomeScreen({super.key, required this.serialService, required this.puertoArduino});
 
@@ -13,24 +13,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Representa los datos recibidos del dispositivo, se actualizan cada vez que llega una nueva línea de datos por el puerto serie
   Datos datos = Datos.empty();
 
   @override
   void initState() {
     super.initState();
 
-    // Al iniciar la pantalla, se suscribe al stream para escuchar los datos que llegan y así actualizar la interfaz
+    // Suscribirse al stream para actualizar datos en tiempo real
     widget.serialService.stream.listen((line) {
       setState(() {
-        datos.updateFromString(line); // Actualiza según la línea que recibe
+        datos.updateFromString(line);
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Si no se ha detectado ningún puerto, muestra un mensaje de error en la pantalla
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -83,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // ---------- Cards con datos ----------
                   Column(
                     children: [
                       _dataRow(
@@ -113,7 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
                 ],
               ),
@@ -144,38 +140,27 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, color: color, size: 35),
           const SizedBox(width: 10),
-
-          // Texto (ocupa todo el espacio posible)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
+                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
                 const SizedBox(height: 5),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(value,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-
           const SizedBox(width: 10),
-
           // --------- BOTÓN ----------
           ElevatedButton(
-            onPressed: () => widget.serialService.send(command),
+            onPressed: () async {
+              // Espera a que se envíe el comando antes de continuar
+              await widget.serialService.send(command);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Icon(Icons.refresh, color: Colors.white),
           ),

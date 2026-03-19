@@ -6,101 +6,98 @@ import 'services/session_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_screen.dart';
 import 'widgets/navbar.dart';
+import 'package:usb_serial/usb_serial.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Se encarga de inicializar los bindings de Flutter
+  WidgetsFlutterBinding.ensureInitialized();
 
   // Configuración de la ventana para Windows
-  // Es necesario porque de lo contrario al cambiar el tamaño de la ventana se recarga toda la app y la app se rompe
-  
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) { // verifica que no esté en web y que el sistema operativo sea Windows
-    await windowManager.ensureInitialized(); // inicializa el window manager, es el encargado de manejar la ventana en Windows
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+    await windowManager.ensureInitialized();
 
-    // Configura las opciones de la ventana, como el tamaño, el título, etc
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(900, 700), // tamaño inicial de la ventana
-      minimumSize: Size(900, 650), // tamaño mínimo de la ventana
-      center: true, // centra la ventana en la pantalla
-      title: "CTB-UPM", // título de la ventana
+      size: Size(900, 700),
+      minimumSize: Size(900, 650),
+      center: true,
+      title: "CTB-UPM",
     );
 
-    // Espera a que la ventana esté lista para mostrarse, luego la muestra y le da el foco
     windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show(); // muestra la ventana
-      await windowManager.focus(); // le da el foco a la ventana
+      await windowManager.show();
+      await windowManager.focus();
     });
   }
 
-  // Inicializa el servicio de comunicación serial, que se encargará de manejar la comunicación con el dispositivo conectado por puerto serie
   final serialService = SerialService();
-  // Se encarga de manejar la sesión, para que si se cambia de pestaña, no se cierre la sesión
   final sessionService = SessionService();
 
-  // Detecta el puerto automáticamente
+  // Detectar automáticamente Arduino y abrir puerto
   String puertoDetectado = "No detectado";
-  final ports = serialService.getAvailablePorts();
+  final devices = await serialService.getAvailableDevices();
 
-  // Si se detecta al menos un puerto, se toma el primero y se abre la comunicación serial con ese puerto
-  if (ports.isNotEmpty) {
-    puertoDetectado = ports.first.split(' - ').first.trim();
-    serialService.open(puertoDetectado);
+  if (devices.isNotEmpty) {
+    // Se toma el primer dispositivo USB
+    final device = devices.first;
+    puertoDetectado = device.productName ?? "Arduino";
+    bool opened = await serialService.open(device);
+    if (!opened) {
+      debugPrint("No se pudo abrir el puerto del dispositivo $puertoDetectado");
+      puertoDetectado = "Error al abrir";
+    }
   }
 
   runApp(MainApp(
-    serialService: serialService, // pasa el servicio
-    sessionService: sessionService, // pasa el servicio de sesión
-    puertoArduino: puertoDetectado, // pasa el puerto detectado
+    serialService: serialService,
+    sessionService: sessionService,
+    puertoArduino: puertoDetectado,
   ));
 }
 
 class MainApp extends StatefulWidget {
-  final SerialService serialService; // comunicación con el arduino
-  final SessionService sessionService; // manejo de sesión
-  final String puertoArduino; // puerto detectado para mostrar en la UI
+  final SerialService serialService;
+  final SessionService sessionService;
+  final String puertoArduino;
 
-  const MainApp({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
+  const MainApp({
+    super.key,
+    required this.serialService,
+    required this.sessionService,
+    required this.puertoArduino,
+  });
 
   @override
   State<MainApp> createState() => _MainAppState();
 }
 
 class _MainAppState extends State<MainApp> {
-  int index = 0; // índice para controlar la pantalla actual, 0 para HomeScreen y 1 para AdminScreen
+  int index = 0;
 
   @override
   Widget build(BuildContext context) {
-
-    // Lista de pantallas disponibles, se pasa el servicio de comunicación serial a cada una para que puedan usarlo
     final screens = [
       HomeScreen(
         serialService: widget.serialService,
         puertoArduino: widget.puertoArduino,
       ),
-
       AdminScreen(
         serialService: widget.serialService,
-        sessionService: widget.sessionService, puertoArduino: widget.puertoArduino,
+        sessionService: widget.sessionService,
+        puertoArduino: widget.puertoArduino,
       ),
     ];
 
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // quita el banner de debug en la esquina
-      title: "CTB-UPM", // título de la app
-      // Tema de la app
+      debugShowCheckedModeBanner: false,
+      title: "CTB-UPM",
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF006D77)), // esquema de colores basado en un color semilla
-        useMaterial3: true, // habilita el uso de Material Design 3, que es la última versión del diseño de Google
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF006D77)),
+        useMaterial3: true,
       ),
-
       home: Scaffold(
-        
-        // IndexedStack es un widget que muestra solo un hijo a la vez, pero mantiene el estado de todos los hijos, lo que es útil para mantener la sesión iniciada al cambiar de pantalla
         body: IndexedStack(index: index, children: screens),
-
-        // ---------- Navbar ----------
         bottomNavigationBar: MainNavbar(
-          currentIndex: index, // índice actual para resaltar el botón correspondiente
-          onTap: (i) => setState(() => index = i), // actualiza el índice al hacer tap en un botón, lo que cambia la pantalla mostrada
+          currentIndex: index,
+          onTap: (i) => setState(() => index = i),
         ),
       ),
     );
