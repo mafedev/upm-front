@@ -14,9 +14,11 @@ void main() async {
 
   // Configuración de la ventana para Windows
   // Es necesario porque de lo contrario al cambiar el tamaño de la ventana se recarga toda la app y la app se rompe
-  
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) { // verifica que no esté en web y que el sistema operativo sea Windows
-    await windowManager.ensureInitialized(); // inicializa el window manager, es el encargado de manejar la ventana en Windows
+
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+    // verifica que no esté en web y que el sistema operativo sea Windows
+    await windowManager
+        .ensureInitialized(); // inicializa el window manager, es el encargado de manejar la ventana en Windows
 
     // Configura las opciones de la ventana, como el tamaño, el título, etc
     WindowOptions windowOptions = const WindowOptions(
@@ -38,10 +40,12 @@ void main() async {
   // Se encarga de manejar la sesión, para que si se cambia de pestaña, no se cierre la sesión
   final sessionService = SessionService();
 
-  runApp(MainApp(
-    serialService: serialService, // pasa el servicio
-    sessionService: sessionService, // pasa el servicio de sesión
-  ));
+  runApp(
+    MainApp(
+      serialService: serialService, // pasa el servicio
+      sessionService: sessionService, // pasa el servicio de sesión
+    ),
+  );
 }
 
 class MainApp extends StatefulWidget {
@@ -71,6 +75,22 @@ class _MainAppState extends State<MainApp> {
     _startPortScan();
   }
 
+  // ---------- Función para encontrar el puerto del Arduino ---------
+  String? _findArduinoPort(List<String> ports) {
+    // Busca en la lista de puertos disponibles alguno que contenga palabras clave relacionadas con Arduino, como "arduino", "ch340" o "usb serial"
+    for (var p in ports) {
+      final lower = p.toLowerCase();
+
+      // Si encuentra un puerto que contenga alguna de estas palabras, devuelve el nombre del puerto
+      if (lower.contains("arduino") ||
+          lower.contains("ch340") ||
+          lower.contains("usb serial")) {
+        return p.split(' - ').first.trim();
+      }
+    }
+    return null;
+  }
+
   // ---------- Escaneo de puertos disponibles ---------
   void _startPortScan() {
     // cada 2 segundos, escanea los puertos disponibles usando el servicio de comunicación serial
@@ -87,7 +107,11 @@ class _MainAppState extends State<MainApp> {
         return;
       }
 
-      final port = ports.first.split(' - ').first.trim(); // toma el primer puerto detectado, y extrae solo el nombre del puerto
+      // Si se detecta algún puerto, intenta encontrar el puerto del Arduino usando la función _findArduinoPort
+      final arduinoPort = _findArduinoPort(ports);
+    
+      // Si no se encuentra un puerto que parezca ser el del Arduino, toma el primer puerto disponible
+      final port = arduinoPort ?? ports.first.split(' - ').first.trim();
 
       // Si el puerto detectado es diferente al que ya se ha abierto, abre el nuevo puerto y actualiza la variable para mostrarlo
       if (puertoArduino != port) {
