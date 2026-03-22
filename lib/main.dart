@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
+
 import 'services/serial_service.dart';
 import 'services/session_service.dart';
 import 'screens/home_screen.dart';
@@ -36,29 +38,21 @@ void main() async {
   // Se encarga de manejar la sesión, para que si se cambia de pestaña, no se cierre la sesión
   final sessionService = SessionService();
 
-  // Detecta el puerto automáticamente
-  String puertoDetectado = "No detectado";
-  final ports = serialService.getAvailablePorts();
-
-  // Si se detecta al menos un puerto, se toma el primero y se abre la comunicación serial con ese puerto
-  if (ports.isNotEmpty) {
-    puertoDetectado = ports.first.split(' - ').first.trim();
-    serialService.open(puertoDetectado);
-  }
-
   runApp(MainApp(
     serialService: serialService, // pasa el servicio
     sessionService: sessionService, // pasa el servicio de sesión
-    puertoArduino: puertoDetectado, // pasa el puerto detectado
   ));
 }
 
 class MainApp extends StatefulWidget {
   final SerialService serialService; // comunicación con el arduino
   final SessionService sessionService; // manejo de sesión
-  final String puertoArduino; // puerto detectado para mostrar en la UI
 
-  const MainApp({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
+  const MainApp({
+    super.key,
+    required this.serialService,
+    required this.sessionService,
+  });
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -67,6 +61,51 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int index = 0; // índice para controlar la pantalla actual, 0 para HomeScreen y 1 para AdminScreen
 
+  String puertoArduino = "Cargando…"; // variable para mostrar el puerto detectado en la UI, inicialmente muestra "Cargando…" hasta que se detecte un puerto disponible
+  Timer? _timer; // timer para escanear los puertos disponibles cada cierto tiempo, se cancela al cerrar la app para evitar fugas de memoria
+
+  @override
+  void initState() {
+    super.initState();
+
+    _startPortScan();
+  }
+
+  // ---------- Escaneo de puertos disponibles ---------
+  void _startPortScan() {
+    // cada 2 segundos, escanea los puertos disponibles usando el servicio de comunicación serial
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
+      final ports = widget.serialService.getAvailablePorts();
+
+      // Si no se detecta ningún puerto, muestra "Cargando…"
+      if (ports.isEmpty) {
+        if (puertoArduino != "Cargando…") {
+          setState(() {
+            puertoArduino = "Cargando…";
+          });
+        }
+        return;
+      }
+
+      final port = ports.first.split(' - ').first.trim(); // toma el primer puerto detectado, y extrae solo el nombre del puerto
+
+      // Si el puerto detectado es diferente al que ya se ha abierto, abre el nuevo puerto y actualiza la variable para mostrarlo
+      if (puertoArduino != port) {
+        widget.serialService.open(port);
+
+        setState(() {
+          puertoArduino = port;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -74,12 +113,13 @@ class _MainAppState extends State<MainApp> {
     final screens = [
       HomeScreen(
         serialService: widget.serialService,
-        puertoArduino: widget.puertoArduino,
+        puertoArduino: puertoArduino,
       ),
 
       AdminScreen(
         serialService: widget.serialService,
-        sessionService: widget.sessionService, puertoArduino: widget.puertoArduino,
+        sessionService: widget.sessionService,
+        puertoArduino: puertoArduino,
       ),
     ];
 
