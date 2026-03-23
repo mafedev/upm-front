@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front_upm/widgets/reconnect_button.dart';
 import '../services/serial_service.dart';
 import '../models/datos.dart';
 
@@ -69,8 +70,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Text("Sistema de control",
                           style: TextStyle(color: Colors.white70)),
                       const SizedBox(height: 5),
-                      Text("Puerto Arduino: ${widget.puertoArduino}",
-                          style: const TextStyle(color: Colors.white)),
+                      Text(
+                        "Puerto Arduino: ${widget.puertoArduino}",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Column(
+                        children: [
+                          ReconnectButton(
+                            serialService: widget.serialService,
+                            puertoArduino: widget.puertoArduino,
+                          ),
+                          // otros widgets
+                        ],
+                      ),
                     ],
                   ),
                 ),
