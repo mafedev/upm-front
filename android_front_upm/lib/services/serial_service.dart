@@ -28,7 +28,6 @@ class SerialService {
       return;
     }
 
-    // 🔥 IMPORTANTE: aquí puedes filtrar por VID/PID si quieres
     UsbDevice device = devices.first;
 
     _port = await device.create();

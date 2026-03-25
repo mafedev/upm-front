@@ -1,0 +1,275 @@
+import 'package:android_front_upm/screens/input_screen.dart';
+import 'package:android_front_upm/services/session_service.dart';
+import 'package:flutter/material.dart';
+import '../services/serial_service.dart';
+
+class AdminScreen extends StatefulWidget {
+  final SerialService serialService; 
+  final SessionService sessionService; 
+  final String puertoArduino; 
+
+  const AdminScreen({
+    super.key, 
+    required this.serialService, 
+    required this.sessionService, 
+    required this.puertoArduino,
+  });
+
+  @override
+  State<AdminScreen> createState() => _AdminScreenState();
+}
+
+class _AdminScreenState extends State<AdminScreen> {
+  final TextEditingController passwordCtrl = TextEditingController();
+  bool showPassword = false;
+
+  void checkPassword() {
+    widget.sessionService.login(passwordCtrl.text);
+    if (widget.sessionService.authenticated) {
+      setState(() {
+        passwordCtrl.clear();
+      });
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Contraseña incorrecta")));
+    }
+  }
+
+  void logout() {
+    widget.sessionService.logout();
+    setState(() {});
+  }
+
+  Future<void> confirmReset() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reiniciar total sesiones'),
+        content: const Text('¿Está seguro que desea reiniciar el total de sesiones?'),
+        actions: [
+          TextButton(
+            child: const Text("Cancelar"),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: const Text("Reiniciar"),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      widget.serialService.send("RESET_TOTAL:1234");
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
+      }
+    }
+  }
+
+  void _openInput(String label, Function(String) onSend) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InputScreen(
+          label: label,
+          onSend: onSend,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authenticated = widget.sessionService.authenticated;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFE3F2FD),
+      body: Center(
+        child: !authenticated ? _buildLoginCard() : _buildAdminPanel(),
+      ),
+    );
+  }
+
+  Widget _buildLoginCard() {
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        width: 350,
+        padding: const EdgeInsets.all(25),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.admin_panel_settings, size: 60, color: Color(0xFF1E88E5)),
+            const SizedBox(height: 10),
+            const Text("Acceso Administrador",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: passwordCtrl,
+              obscureText: !showPassword,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelText: 'Contraseña',
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                suffixIcon: IconButton(
+                  icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () {
+                    setState(() {
+                      showPassword = !showPassword;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: checkPassword,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E88E5),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text("Entrar",
+                    style: TextStyle(fontSize: 18, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminPanel() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E88E5),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.medical_services, color: Colors.white, size: 40),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("CTB-UPM",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 5),
+                    const Text("Panel de administrador",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 5),
+                    Text("Puerto Arduino: ${widget.puertoArduino}",
+                        style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: logout,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GridView(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                childAspectRatio: 2,
+              ),
+              children: [
+                _dashboardButton(
+                  icon: Icons.add_task,
+                  label: "Cargar sesiones",
+                  color: const Color(0xFF43A047),
+                  onTap: () => _openInput("Número de sesiones",
+                      (value) => widget.serialService.send("SET_SESIONES:$value")),
+                ),
+                _dashboardButton(
+                  icon: Icons.edit,
+                  label: "Cambiar número de serie",
+                  color: const Color(0xFF1E88E5),
+                  onTap: () => _openInput("Nuevo número de serie",
+                      (value) => widget.serialService.send("SET_SERIAL:$value")),
+                ),
+                _dashboardButton(
+                  icon: Icons.restart_alt,
+                  label: "Reiniciar total sesiones",
+                  color: Colors.red,
+                  onTap: confirmReset,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dashboardButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 32),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
