@@ -1,18 +1,19 @@
-import 'package:android_front_upm/screens/input_screen.dart';
-import 'package:android_front_upm/services/session_service.dart';
+import 'package:android_front_upm/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
+import '../services/session_service.dart';
+import 'input_screen.dart';
 
 class AdminScreen extends StatefulWidget {
-  final SerialService serialService; 
-  final SessionService sessionService; 
-  final String puertoArduino; 
+  final SerialService serialService;
+  final SessionService sessionService;
+  final bool arduinoConnected;
 
   const AdminScreen({
-    super.key, 
-    required this.serialService, 
-    required this.sessionService, 
-    required this.puertoArduino,
+    super.key,
+    required this.serialService,
+    required this.sessionService,
+    required this.arduinoConnected,
   });
 
   @override
@@ -22,22 +23,33 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   final TextEditingController passwordCtrl = TextEditingController();
   bool showPassword = false;
+  bool authenticated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    authenticated = widget.sessionService.authenticated;
+  }
 
   void checkPassword() {
     widget.sessionService.login(passwordCtrl.text);
     if (widget.sessionService.authenticated) {
       setState(() {
         passwordCtrl.clear();
+        authenticated = true; // activar panel y logout
       });
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Contraseña incorrecta")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Contraseña incorrecta")));
     }
   }
 
   void logout() {
     widget.sessionService.logout();
-    setState(() {});
+    setState(() {
+      authenticated = false; // vuelve al login
+    });
   }
 
   Future<void> confirmReset() async {
@@ -45,7 +57,9 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Reiniciar total sesiones'),
-        content: const Text('¿Está seguro que desea reiniciar el total de sesiones?'),
+        content: const Text(
+          '¿Está seguro que desea reiniciar el total de sesiones?',
+        ),
         actions: [
           TextButton(
             child: const Text("Cancelar"),
@@ -62,8 +76,9 @@ class _AdminScreenState extends State<AdminScreen> {
     if (result == true) {
       widget.serialService.send("RESET_TOTAL:1234");
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
       }
     }
   }
@@ -72,22 +87,7 @@ class _AdminScreenState extends State<AdminScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => InputScreen(
-          label: label,
-          onSend: onSend,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authenticated = widget.sessionService.authenticated;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFE3F2FD),
-      body: Center(
-        child: !authenticated ? _buildLoginCard() : _buildAdminPanel(),
+        builder: (_) => InputScreen(label: label, onSend: onSend),
       ),
     );
   }
@@ -102,10 +102,16 @@ class _AdminScreenState extends State<AdminScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.admin_panel_settings, size: 60, color: Color(0xFF1E88E5)),
+            const Icon(
+              Icons.admin_panel_settings,
+              size: 60,
+              color: Color(0xFF1E88E5),
+            ),
             const SizedBox(height: 10),
-            const Text("Acceso Administrador",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              "Acceso Administrador",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: passwordCtrl,
@@ -119,7 +125,9 @@ class _AdminScreenState extends State<AdminScreen> {
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 suffixIcon: IconButton(
-                  icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                    showPassword ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () {
                     setState(() {
                       showPassword = !showPassword;
@@ -137,95 +145,15 @@ class _AdminScreenState extends State<AdminScreen> {
                   backgroundColor: const Color(0xFF1E88E5),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: const Text("Entrar",
-                    style: TextStyle(fontSize: 18, color: Colors.white)),
+                child: const Text(
+                  "Entrar",
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAdminPanel() {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E88E5),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.medical_services, color: Colors.white, size: 40),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("CTB-UPM",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    const Text("Panel de administrador",
-                        style: TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 5),
-                    Text("Puerto Arduino: ${widget.puertoArduino}",
-                        style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                onPressed: logout,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 2,
-              ),
-              children: [
-                _dashboardButton(
-                  icon: Icons.add_task,
-                  label: "Cargar sesiones",
-                  color: const Color(0xFF43A047),
-                  onTap: () => _openInput("Número de sesiones",
-                      (value) => widget.serialService.send("SET_SESIONES:$value")),
-                ),
-                _dashboardButton(
-                  icon: Icons.edit,
-                  label: "Cambiar número de serie",
-                  color: const Color(0xFF1E88E5),
-                  onTap: () => _openInput("Nuevo número de serie",
-                      (value) => widget.serialService.send("SET_SERIAL:$value")),
-                ),
-                _dashboardButton(
-                  icon: Icons.restart_alt,
-                  label: "Reiniciar total sesiones",
-                  color: Colors.red,
-                  onTap: confirmReset,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -269,6 +197,64 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdminPanel() {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: GridView(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 15,
+            mainAxisSpacing: 15,
+            childAspectRatio: 2,
+          ),
+          children: [
+            _dashboardButton(
+              icon: Icons.add_task,
+              label: "Cargar sesiones",
+              color: const Color(0xFF43A047),
+              onTap: () => _openInput(
+                "Número de sesiones",
+                (value) => widget.serialService.send("SET_SESIONES:$value"),
+              ),
+            ),
+            _dashboardButton(
+              icon: Icons.edit,
+              label: "Cambiar número de serie",
+              color: const Color(0xFF1E88E5),
+              onTap: () => _openInput(
+                "Nuevo número de serie",
+                (value) => widget.serialService.send("SET_SERIAL:$value"),
+              ),
+            ),
+            _dashboardButton(
+              icon: Icons.restart_alt,
+              label: "Reiniciar total sesiones",
+              color: Colors.red,
+              onTap: confirmReset,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: SystemAppBar(
+        subtitle: widget.arduinoConnected
+            ? "Arduino Conectado"
+            : "No conectado",
+        showLogout: authenticated,
+        onLogout: logout,
+      ),
+      body: Center(
+        child: !authenticated ? _buildLoginCard() : _buildAdminPanel(),
       ),
     );
   }

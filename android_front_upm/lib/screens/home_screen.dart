@@ -1,40 +1,55 @@
-import 'package:android_front_upm/services/serial_service.dart';
+import 'package:android_front_upm/widgets/appbar.dart';
 import 'package:flutter/material.dart';
+import '../services/serial_service.dart';
 import '../models/datos.dart';
 
 class HomeScreen extends StatefulWidget {
   final SerialService serial;
+  final bool arduinoConnected;
 
-  const HomeScreen({super.key, required this.serial});
+  const HomeScreen({
+    super.key,
+    required this.serial,
+    required this.arduinoConnected,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final datos = Datos();
+  final Datos datos = Datos();
 
   @override
   void initState() {
     super.initState();
-
     widget.serial.dataStream.listen((line) {
       setState(() {
         datos.updateFromLine(line);
       });
     });
 
-    // pedir datos iniciales
+    // Pedir datos iniciales
     widget.serial.send("GET_SESIONES");
     widget.serial.send("GET_TOTAL");
     widget.serial.send("GET_SERIAL");
   }
 
-  Widget card(String title, String value, String cmd) {
+  Widget _dataCard(
+    String title,
+    String value,
+    String cmd,
+    Color color,
+    IconData icon,
+  ) {
     return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: ListTile(
-        title: Text(title),
-        subtitle: Text(value),
+        leading: Icon(icon, color: color, size: 36),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value, style: const TextStyle(fontSize: 16)),
         trailing: IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: () => widget.serial.send(cmd),
@@ -46,13 +61,37 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("CTB-UPM")),
-      body: Column(
-        children: [
-          card("Sesiones", "${datos.sesiones}", "GET_SESIONES"),
-          card("Total", "${datos.total}", "GET_TOTAL"),
-          card("Serial", datos.serial, "GET_SERIAL"),
-        ],
+      appBar: SystemAppBar(
+        subtitle: widget.arduinoConnected
+            ? "Arduino Conectado"
+            : "No conectado",
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _dataCard(
+              "Sesiones restantes",
+              "${datos.sesiones}",
+              "GET_SESIONES",
+              const Color(0xFF1E88E5),
+              Icons.timer,
+            ),
+            _dataCard(
+              "Total sesiones",
+              "${datos.total}",
+              "GET_TOTAL",
+              const Color(0xFF2E7D32),
+              Icons.list_alt,
+            ),
+            _dataCard(
+              "Número de serie",
+              datos.serial,
+              "GET_SERIAL",
+              const Color(0xFF0D47A1),
+              Icons.qr_code,
+            ),
+          ],
+        ),
       ),
     );
   }
