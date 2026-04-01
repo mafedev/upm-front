@@ -10,7 +10,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.serial,
-    required this.arduinoConnected,
+    this.arduinoConnected = false,
   });
 
   @override
@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final Datos datos = Datos();
+  final datos = Datos();
 
   @override
   void initState() {
@@ -42,6 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color,
     IconData icon,
   ) {
+    final displayValue = (value.isEmpty || value == "0") ? "-" : value;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -49,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListTile(
         leading: Icon(icon, color: color, size: 36),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 16)),
+        subtitle: Text(displayValue, style: const TextStyle(fontSize: 16)),
         trailing: IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: () => widget.serial.send(cmd),
@@ -60,39 +62,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: SystemAppBar(
-        subtitle: widget.arduinoConnected
-            ? "Arduino Conectado"
-            : "No conectado",
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _dataCard(
-              "Sesiones restantes",
-              "${datos.sesiones}",
-              "GET_SESIONES",
-              const Color(0xFF1E88E5),
-              Icons.timer,
-            ),
-            _dataCard(
-              "Total sesiones",
-              "${datos.total}",
-              "GET_TOTAL",
-              const Color(0xFF2E7D32),
-              Icons.list_alt,
-            ),
-            _dataCard(
-              "Número de serie",
-              datos.serial,
-              "GET_SERIAL",
-              const Color(0xFF0D47A1),
-              Icons.qr_code,
-            ),
-          ],
+    return Column(
+      children: [
+        SystemAppBar(
+          subtitle: widget.arduinoConnected
+              ? "Arduino Conectado"
+              : "No conectado",
         ),
-      ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _dataCard(
+                  "Sesiones restantes",
+                  datos.sesiones.toString(),
+                  "GET_SESIONES",
+                  const Color(0xFF1E88E5),
+                  Icons.timer,
+                ),
+                _dataCard(
+                  "Total sesiones",
+                  datos.total.toString(),
+                  "GET_TOTAL",
+                  const Color(0xFF2E7D32),
+                  Icons.list_alt,
+                ),
+                _dataCard(
+                  "Número de serie",
+                  datos.serial,
+                  "GET_SERIAL",
+                  const Color(0xFF0D47A1),
+                  Icons.qr_code,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

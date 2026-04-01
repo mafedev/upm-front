@@ -1,19 +1,21 @@
-import 'package:android_front_upm/widgets/appbar.dart';
 import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
 import '../services/session_service.dart';
 import 'input_screen.dart';
+import '../widgets/appbar.dart';
 
 class AdminScreen extends StatefulWidget {
   final SerialService serialService;
   final SessionService sessionService;
+  final VoidCallback? onLogout;
   final bool arduinoConnected;
 
   const AdminScreen({
     super.key,
     required this.serialService,
     required this.sessionService,
-    required this.arduinoConnected,
+    this.onLogout,
+    this.arduinoConnected = false,
   });
 
   @override
@@ -23,20 +25,14 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   final TextEditingController passwordCtrl = TextEditingController();
   bool showPassword = false;
-  bool authenticated = false;
 
-  @override
-  void initState() {
-    super.initState();
-    authenticated = widget.sessionService.authenticated;
-  }
-
+  // ---------------- LOGIN ----------------
   void checkPassword() {
     widget.sessionService.login(passwordCtrl.text);
+
     if (widget.sessionService.authenticated) {
       setState(() {
         passwordCtrl.clear();
-        authenticated = true; // activar panel y logout
       });
     } else {
       ScaffoldMessenger.of(
@@ -45,21 +41,22 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
-  void logout() {
+  // ---------------- LOGOUT ----------------
+  void _logout() {
     widget.sessionService.logout();
-    setState(() {
-      authenticated = false; // vuelve al login
-    });
+
+    setState(() {}); // refresca UI
+
+    widget.onLogout?.call(); // opcional (volver a home, etc)
   }
 
+  // ---------------- RESET ----------------
   Future<void> confirmReset() async {
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Reiniciar total sesiones'),
-        content: const Text(
-          '¿Está seguro que desea reiniciar el total de sesiones?',
-        ),
+        content: const Text('¿Está seguro que desea reiniciar el total de sesiones?'),
         actions: [
           TextButton(
             child: const Text("Cancelar"),
@@ -75,14 +72,16 @@ class _AdminScreenState extends State<AdminScreen> {
 
     if (result == true) {
       widget.serialService.send("RESET_TOTAL:1234");
+
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reinicio solicitado')),
+        );
       }
     }
   }
 
+  // ---------------- INPUT ----------------
   void _openInput(String label, Function(String) onSend) {
     Navigator.push(
       context,
@@ -92,71 +91,74 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  // ---------------- LOGIN UI ----------------
   Widget _buildLoginCard() {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        width: 350,
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.admin_panel_settings,
-              size: 60,
-              color: Color(0xFF1E88E5),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Acceso Administrador",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: passwordCtrl,
-              obscureText: !showPassword,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                labelText: 'Contraseña',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    showPassword ? Icons.visibility : Icons.visibility_off,
+    return Center(
+      child: Card(
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Container(
+          width: 350,
+          padding: const EdgeInsets.all(25),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.admin_panel_settings, size: 60, color: Color(0xFF1E88E5)),
+              const SizedBox(height: 10),
+              const Text(
+                "Acceso Administrador",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: passwordCtrl,
+                obscureText: !showPassword,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      showPassword = !showPassword;
-                    });
-                  },
+                  labelText: 'Contraseña',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      showPassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        showPassword = !showPassword;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: checkPassword,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                child: const Text(
-                  "Entrar",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: checkPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E88E5),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                  child: const Text(
+                    "Entrar",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ---------------- BOTONES ----------------
   Widget _dashboardButton({
     required IconData icon,
     required String label,
@@ -201,61 +203,67 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  // ---------------- PANEL ADMIN ----------------
   Widget _buildAdminPanel() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: GridView(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-            childAspectRatio: 2,
-          ),
-          children: [
-            _dashboardButton(
-              icon: Icons.add_task,
-              label: "Cargar sesiones",
-              color: const Color(0xFF43A047),
-              onTap: () => _openInput(
-                "Número de sesiones",
-                (value) => widget.serialService.send("SET_SESIONES:$value"),
-              ),
-            ),
-            _dashboardButton(
-              icon: Icons.edit,
-              label: "Cambiar número de serie",
-              color: const Color(0xFF1E88E5),
-              onTap: () => _openInput(
-                "Nuevo número de serie",
-                (value) => widget.serialService.send("SET_SERIAL:$value"),
-              ),
-            ),
-            _dashboardButton(
-              icon: Icons.restart_alt,
-              label: "Reiniciar total sesiones",
-              color: Colors.red,
-              onTap: confirmReset,
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GridView(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 15,
+          childAspectRatio: 2,
         ),
+        children: [
+          _dashboardButton(
+            icon: Icons.add_task,
+            label: "Cargar sesiones",
+            color: const Color(0xFF43A047),
+            onTap: () => _openInput(
+              "Número de sesiones",
+              (value) => widget.serialService.send("SET_SESIONES:$value"),
+            ),
+          ),
+          _dashboardButton(
+            icon: Icons.edit,
+            label: "Cambiar número de serie",
+            color: const Color(0xFF1E88E5),
+            onTap: () => _openInput(
+              "Nuevo número de serie",
+              (value) => widget.serialService.send("SET_SERIAL:$value"),
+            ),
+          ),
+          _dashboardButton(
+            icon: Icons.restart_alt,
+            label: "Reiniciar total sesiones",
+            color: Colors.red,
+            onTap: confirmReset,
+          ),
+        ],
       ),
     );
   }
 
+  // ---------------- BUILD ----------------
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: SystemAppBar(
-        subtitle: widget.arduinoConnected
-            ? "Arduino Conectado"
-            : "No conectado",
-        showLogout: authenticated,
-        onLogout: logout,
-      ),
-      body: Center(
-        child: !authenticated ? _buildLoginCard() : _buildAdminPanel(),
-      ),
+    final authenticated = widget.sessionService.authenticated;
+
+    return Column(
+      children: [
+        if (authenticated)
+          SystemAppBar(
+            subtitle: "Panel Administrador",
+            showLogout: true,
+            onLogout: _logout,
+          ),
+
+        Expanded(
+          child: authenticated
+              ? _buildAdminPanel()
+              : _buildLoginCard(),
+        ),
+      ],
     );
   }
 }

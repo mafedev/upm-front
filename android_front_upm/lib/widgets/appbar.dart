@@ -13,12 +13,19 @@ class SystemAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(100);
+  Size get preferredSize => const Size.fromHeight(70); // altura total del AppBar
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top; // altura barra de estado
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        top: topPadding + 12,   // espacio arriba dinámico
+        bottom: 18,               // espacio pequeño abajo
+        left: 16,
+        right: 16,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
@@ -34,12 +41,13 @@ class SystemAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Icon(Icons.medical_services, color: Colors.white, size: 48),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center, // centrado vertical
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(

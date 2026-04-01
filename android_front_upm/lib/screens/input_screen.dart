@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
+import 'package:flutter/services.dart';
 
 class InputScreen extends StatefulWidget {
   final String label; // etiqueta para mostrar en el TextField
@@ -57,6 +58,8 @@ class _InputScreenState extends State<InputScreen> {
               children: [
                 TextField(
                   controller: _controller,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: widget.label,
                     border: OutlineInputBorder(
