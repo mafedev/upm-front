@@ -1,66 +1,28 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flserial/flserial.dart';
+abstract class SerialService {
+  /// Stream de datos entrantes (líneas del Arduino)
+  Stream<String> get dataStream;
 
-class SerialService {
-  FlSerial? _serial;
-  bool _opened = false;
+  /// Estado de conexión
+  Stream<bool> get connectionStream;
 
-  final StreamController<String> _controller =
-      StreamController<String>.broadcast();
-  Stream<String> get stream => _controller.stream;
+  bool get isConnected;
 
-  // Lista los nombres de puertos disponibles
-  List<String> getAvailablePorts() {
-    return FlSerial.listPorts();
-  }
+  /// Conectar
+  Future<void> connect();
 
-  // Abre el puerto
-  bool open(String portName, {int baudRate = 9600}) {
-    try {
-      _serial = FlSerial();
-      _serial!.init();
-      _serial!.openPort(portName, baudRate);
+  /// Desconectar
+  Future<void> disconnect();
 
-      // Escuchar datos
-      _serial!.onSerialData.stream.listen((args) {
-        if (args.len > 0) {
-          final bytes = args.serial.readList();
-          final text = String.fromCharCodes(bytes).trim();
-          if (text.isNotEmpty) _controller.add(text);
-        }
-      });
+  /// Enviar comando (ej: SET_SESIONES:10)
+  Future<void> send(String command);
 
-      _opened = true;
-      debugPrint("Puerto abierto: $portName");
-      return true;
-    } catch (e) {
-      debugPrint("Error abriendo puerto: $e");
-      return false;
-    }
-  }
+  /// Auto conexión (opcional en Android)
+  void startAutoConnect();
 
-  // Envía datos
-  void send(String data, {String terminator = '\n'}) {
-    if (!_opened || _serial == null) return;
-    final msg = '$data$terminator';
-    final bytes = Uint8List.fromList(msg.codeUnits);
-    try {
-      _serial!.write(bytes);
-    } catch (e) {
-      debugPrint("Error enviando datos: $e");
-    }
-  }
+  void stopAutoConnect();
 
-  // Cierra el puerto
-  void close() {
-    if (!_opened || _serial == null) return;
-    try {
-      _serial!.closePort();
-      _serial!.free();
-    } catch (e) {
-      debugPrint("Error cerrando puerto: $e");
-    }
-    _opened = false;
-  }
+  /// Liberar recursos
+  void dispose();
+
+  String? get puertoActual;
 }

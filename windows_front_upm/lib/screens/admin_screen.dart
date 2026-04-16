@@ -1,15 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../services/serial_service.dart';
 import '../services/session_service.dart';
 import 'input_screen.dart';
 
 class AdminScreen extends StatefulWidget {
+  final SerialService serialService;
+  final SessionService sessionService;
+  final bool arduinoConnected; // <-- cambia a bool
 
-  final SerialService serialService; // servicio de comunicación serial, se pasa desde la pantalla principal para que pueda usarlo
-  final SessionService sessionService; // servicio de manejo de sesión
-  final String puertoArduino; // puerto detectado para mostrar en la UI
-
-  const AdminScreen({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
+  const AdminScreen({
+    super.key,
+    required this.serialService,
+    required this.sessionService,
+    required this.arduinoConnected, // <-- coincide con el parámetro
+  });
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();
@@ -71,18 +77,36 @@ class _AdminScreenState extends State<AdminScreen> {
 
     // Si se confirmó el reinicio
     if (result == true) {
-      widget.serialService.send('6'); // envía el '6' al arduino para reiniciar
+      // El firmware espera el comando RESET_TOTAL:<codigo>
+      widget.serialService.send('RESET_TOTAL:1234');
 
-      // Hace un retraso para asegurarse de que el comando se envió antes de mostrar el mensaje, ya que el envío es asíncrono
-      Future.delayed(
-        const Duration(milliseconds: 200),
-        () => widget.serialService.send('1234'), // envía el '1234' al arduino para confirmar la acción
-      );
+      // Esperar respuesta OK/ERROR
+      StreamSubscription<String>? sub;
+      sub = widget.serialService.dataStream.listen((line) {
+        final l = line.trim().toUpperCase();
+        if (l == 'OK' || l.startsWith('OK')) {
+          sub?.cancel();
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
+          }
+        } else if (l.startsWith('ERROR')) {
+          sub?.cancel();
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('Error: $line')));
+          }
+        }
+      });
 
-      // si salió bien, muestra el mensaje
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reinicio solicitado')));
-      }
+      // Fallback: mostrar mensaje tras 2s si no hay respuesta
+      Future.delayed(const Duration(seconds: 2), () {
+        sub?.cancel();
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Reinicio solicitado (fallback)')));
+        }
+      });
     }
   }
 
@@ -207,7 +231,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Puerto Arduino: ${widget.puertoArduino}",
+                      "Arduino: ${widget.arduinoConnected ? 'Conectado' : 'Desconectado'}",
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                   ],
