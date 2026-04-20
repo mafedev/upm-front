@@ -1,8 +1,7 @@
+import 'package:android_front_upm/screens/reload_screen.dart';
 import 'package:flutter/material.dart';
 import 'services/serial_service.dart';
-import 'services/session_service.dart';
 import 'screens/home_screen.dart';
-import 'screens/admin_screen.dart';
 import 'widgets/navbar.dart';
 
 void main() async {
@@ -11,19 +10,15 @@ void main() async {
   final serialService = SerialService();
   serialService.startAutoConnect();
 
-  final sessionService = SessionService();
-
-  runApp(MyApp(serialService: serialService, sessionService: sessionService));
+  runApp(MyApp(serialService: serialService));
 }
 
 class MyApp extends StatelessWidget {
   final SerialService serialService;
-  final SessionService sessionService;
 
   const MyApp({
     super.key,
     required this.serialService,
-    required this.sessionService,
   });
 
   @override
@@ -40,7 +35,6 @@ class MyApp extends StatelessWidget {
       ),
       home: MainScreen(
         serialService: serialService,
-        sessionService: sessionService,
       ),
     );
   }
@@ -48,12 +42,10 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   final SerialService serialService;
-  final SessionService sessionService;
 
   const MainScreen({
     super.key,
     required this.serialService,
-    required this.sessionService,
   });
 
   @override
@@ -81,10 +73,9 @@ class _MainScreenState extends State<MainScreen> {
         serial: widget.serialService,
         arduinoConnected: _arduinoConnected,
       ),
-      AdminScreen(
+      RechargeScreen(
         serialService: widget.serialService,
-        sessionService: widget.sessionService,
-        arduinoConnected: _arduinoConnected, // muestra estado Arduino
+        arduinoConnected: _arduinoConnected,
       ),
     ];
 

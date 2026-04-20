@@ -17,7 +17,7 @@ class MainNavbar extends StatelessWidget {
       onTap: onTap,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"), // botón para la pantalla principal, con un icono de casa
-        BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings),label: "Admin"), // segudno botón para la parte de admin
+        BottomNavigationBarItem(icon: Icon(Icons.vertical_align_bottom_sharp), label: "Recargar Sesiones"), // segundo botón para recargar sesiones al arduino
       ],
     );
   }
