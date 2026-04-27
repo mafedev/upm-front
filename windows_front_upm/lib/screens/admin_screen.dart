@@ -6,10 +6,9 @@ import 'input_screen.dart';
 class AdminScreen extends StatefulWidget {
 
   final SerialService serialService; // servicio de comunicación serial, se pasa desde la pantalla principal para que pueda usarlo
-  final SessionService sessionService; // servicio de manejo de sesión
   final String puertoArduino; // puerto detectado para mostrar en la UI
 
-  const AdminScreen({super.key, required this.serialService, required this.sessionService, required this.puertoArduino});
+  const AdminScreen({super.key, required this.serialService, required this.puertoArduino});
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();
@@ -19,28 +18,6 @@ class _AdminScreenState extends State<AdminScreen> {
 
   final TextEditingController passwordCtrl = TextEditingController(); // conrolador para la contraseña que se ingresa en el TextField, se usa para obtener el valor ingresado y para limpiar el campo después de ingresar la contraseña correcta
   bool showPassword = false; // variable para controlar si la contraseña se muestra o se oculta en el TextField, se cambia al hacer click en el ojo
-
-  // ---------- Verificación contraseña ----------
-  void checkPassword() {
-    // Usa el servicio para que verifique la contraseña ingresada
-    widget.sessionService.login(passwordCtrl.text);
-
-    // si la contraseña es correcta, se autentica la sesión y se muestra el panel de administración, si no, se muestra un mensaje de error
-    if (widget.sessionService.authenticated) {
-      // limpia el campo de TextField después de ingresar la contraseña
-      setState(() {
-        passwordCtrl.clear();
-      });
-    } else { // Si la contraseña es incorrecta, muestra un mensaje de error en un SnackBar
-      ScaffoldMessenger.of(context, ).showSnackBar(const SnackBar(content: Text("Contraseña incorrecta")));
-    }
-  }
-
-  // ---------- Cerrar sesión ----------
-  void logout() {
-    widget.sessionService.logout(); // llama al método de cerrar sesión del servicio
-    setState(() {}); // actualiza la UI para mostrar el formulario de login nuevamente
-  }
 
   // ---------- Confirmar reinicio total de sesiones ----------
   // Es la ventana de confirmación que se muestra al hacer click en el botón de reiniciar total de sesiones, para evitar que se reinicie por error
@@ -89,7 +66,6 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     // Obtiene el estado de autenticación de la sesión para mostrar el formulario de login o el panel de administración según corresponda
-    final authenticated = widget.sessionService.authenticated;
 
     return Scaffold(
 
@@ -97,7 +73,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
       body: Center(
         // Si no está autenticado, muestra el formulario de login, si está autenticado, muestra el panel de administración
-        child: !authenticated ? _buildLoginCard() : _buildAdminPanel(),
+        child:  _buildAdminPanel(),
       ),
     );
   }
@@ -149,21 +125,6 @@ class _AdminScreenState extends State<AdminScreen> {
 
             const SizedBox(height: 20),
 
-            // ---------- Botón para verificar la contraseña ----------
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: checkPassword, // llama a la función de verificar contraseña al hacer click
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                child: const Text(
-                  "Entrar",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -212,10 +173,6 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                onPressed: logout,
               ),
             ],
           ),

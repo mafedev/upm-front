@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:windows_front_upm/screens/admin_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 import 'services/serial_service.dart';
-import 'services/session_service.dart';
+import 'services/admin_service.dart';
 import 'screens/home_screen.dart';
-import 'screens/admin_screen.dart';
 import 'widgets/navbar.dart';
 
 void main() async {
@@ -17,13 +19,12 @@ void main() async {
 
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     // verifica que no esté en web y que el sistema operativo sea Windows
-    await windowManager
-        .ensureInitialized(); // inicializa el window manager, es el encargado de manejar la ventana en Windows
+    await windowManager.ensureInitialized(); // inicializa el window manager, es el encargado de manejar la ventana en Windows
 
     // Configura las opciones de la ventana, como el tamaño, el título, etc
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(900, 700), // tamaño inicial de la ventana
-      minimumSize: Size(900, 650), // tamaño mínimo de la ventana
+    const windowOptions = WindowOptions(
+      size: Size(1100, 750), // tamaño inicial de la ventana
+      minimumSize: Size(1000, 700), // tamaño mínimo de la ventana
       center: true, // centra la ventana en la pantalla
       title: "CTB-UPM", // título de la ventana
     );
@@ -38,24 +39,27 @@ void main() async {
   // Inicializa el servicio de comunicación serial, que se encargará de manejar la comunicación con el dispositivo conectado por puerto serie
   final serialService = SerialService();
   // Se encarga de manejar la sesión, para que si se cambia de pestaña, no se cierre la sesión
-  final sessionService = SessionService();
+  final adminService = AdminService(
+    baseUrl: dotenv.env['BASE_URL']!,
+    token: dotenv.env['API_TOKEN']!,
+  );
 
   runApp(
     MainApp(
       serialService: serialService, // pasa el servicio
-      sessionService: sessionService, // pasa el servicio de sesión
-    ),
+      adminService: adminService
+    )
   );
 }
 
 class MainApp extends StatefulWidget {
   final SerialService serialService; // comunicación con el arduino
-  final SessionService sessionService; // manejo de sesión
+  final AdminService adminService;
 
   const MainApp({
     super.key,
     required this.serialService,
-    required this.sessionService,
+    required this.adminService,
   });
 
   @override
@@ -99,11 +103,7 @@ class _MainAppState extends State<MainApp> {
 
       // Si no se detecta ningún puerto, muestra "Cargando…"
       if (ports.isEmpty) {
-        if (puertoArduino != "Cargando…") {
-          setState(() {
-            puertoArduino = "Cargando…";
-          });
-        }
+        setState(() => puertoArduino = "Cargando…");
         return;
       }
 
@@ -142,8 +142,12 @@ class _MainAppState extends State<MainApp> {
 
       AdminScreen(
         serialService: widget.serialService,
-        sessionService: widget.sessionService,
         puertoArduino: puertoArduino,
+      ),
+
+      AdminDashboardScreen(
+        api: widget.adminService,
+        serialService: widget.serialService,
       ),
     ];
 

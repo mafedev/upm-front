@@ -7,8 +7,11 @@ class InputScreen extends StatefulWidget {
   final SerialService serialService; // servicio de comunicación
   final int command; // comando que se enviará al arduino
   final String label; // etiqueta para mostrar en el TextField
+  final String? initialValue; // valor opcional para prellenar el campo
+  final Future<void> Function()?
+  onSent; // callback opcional asíncrono que se ejecuta después de enviar
 
-  const InputScreen({super.key, required this.serialService, required this.command, required this.label});
+  const InputScreen({super.key, required this.serialService, required this.command, required this.label, this.initialValue, this.onSent});
 
   @override
   State<InputScreen> createState() => _InputScreenState();
@@ -33,7 +36,10 @@ class _InputScreenState extends State<InputScreen> {
       if (l.contains('introduce')) { // si la línea contiene la palabra "introduce", significa que el arduino está listo para recibir el valor
         widget.serialService.send(input, terminator: '\r\n'); // envía el valor ingresado por el usuario al arduino, con un salto de línea al final para indicar que es el final del comando
         _sub?.cancel(); // cancela la suscripción al stream, ya que no se necesita escuchar más respuestas del arduino después de enviar el valor
-        
+
+        // notificar al caller si se proporcionó callback (no aguardamos)
+        widget.onSent?.call();
+
         // si salío bien, muestra un mensaje y vuelve a la pantalla anterior
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dato enviado')));
@@ -48,12 +54,24 @@ class _InputScreenState extends State<InputScreen> {
       if (_sub != null) {
         widget.serialService.send(input, terminator: '\r\n'); // envía el valor ingresado por el usuario al arduino, con un salto de línea al final para indicar que es el final del comando
         _sub?.cancel(); // camcela la suscripción
+
+        // notificar al caller si se proporcionó callback (no aguardamos)
+        widget.onSent?.call();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dato enviado (fallback)')));
           Navigator.pop(context);
         }
       }
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialValue != null) {
+      _controller.text = widget.initialValue!;
+    }
   }
 
   @override
@@ -74,7 +92,6 @@ class _InputScreenState extends State<InputScreen> {
       ),
       backgroundColor: const Color(0xFFE3F2FD),
       body: Center(
-        
         child: Card(
           elevation: 8,
           shape: RoundedRectangleBorder(
