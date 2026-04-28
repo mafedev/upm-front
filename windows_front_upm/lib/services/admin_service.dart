@@ -20,7 +20,7 @@ class AdminService {
     throw Exception("HTTP ${res.statusCode}: ${res.body}");
   }
 
-  Future<List<String>> getDevices() async {
+  Future<List<Map<String, dynamic>>> getDevices() async {
     final url = '$baseUrl/api/admin/devices';
 
     final res = await http.get(Uri.parse(url), headers: _adminHeaders);
@@ -31,7 +31,7 @@ class AdminService {
 
     final List data = jsonDecode(res.body);
 
-    return data.map<String>((e) => e["serialNumber"].toString()).toList();
+    return data.map<Map<String, dynamic>>((e) => {"serialNumber": e["serialNumber"], "ownerName": e["ownerName"],}).toList();
   }
 
   Future<Map<String, dynamic>> getStatus(String serial) async {
