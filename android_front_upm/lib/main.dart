@@ -1,24 +1,33 @@
-import 'package:android_front_upm/screens/reload_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'services/serial_service.dart';
+import 'services/admin_service.dart';
 import 'screens/home_screen.dart';
+import 'screens/transfer_screen.dart';
 import 'widgets/navbar.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
 
   final serialService = SerialService();
   serialService.startAutoConnect();
 
-  runApp(MyApp(serialService: serialService));
+  final adminService = AdminService(baseUrl: dotenv.env['BASE_URL']!);
+
+  runApp(MyApp(serialService: serialService, adminService: adminService));
 }
 
 class MyApp extends StatelessWidget {
   final SerialService serialService;
+  final AdminService adminService;
 
   const MyApp({
     super.key,
     required this.serialService,
+    required this.adminService,
   });
 
   @override
@@ -35,6 +44,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MainScreen(
         serialService: serialService,
+        adminService: adminService,
       ),
     );
   }
@@ -42,10 +52,12 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   final SerialService serialService;
+  final AdminService adminService;
 
   const MainScreen({
     super.key,
     required this.serialService,
+    required this.adminService,
   });
 
   @override
@@ -73,9 +85,9 @@ class _MainScreenState extends State<MainScreen> {
         serial: widget.serialService,
         arduinoConnected: _arduinoConnected,
       ),
-      RechargeScreen(
+      TransferScreen(
         serialService: widget.serialService,
-        arduinoConnected: _arduinoConnected,
+        api: widget.adminService,
       ),
     ];
 
@@ -84,9 +96,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: MainNavbar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          setState(() => _currentIndex = index);
         },
       ),
     );
