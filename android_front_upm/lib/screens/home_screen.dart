@@ -88,10 +88,10 @@ class _HomeScreenState extends State<HomeScreen>
           end: Offset.zero,
         ).animate(animation),
         child: Container(
-          margin: EdgeInsets.only(
+          margin: const EdgeInsets.only(
             left: 16,
             right: 16,
-            top: index == 0 ? 2 : 10,
+            top: 12,
             bottom: 10,
           ),
           padding: const EdgeInsets.all(18),
@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     Text(title.toUpperCase(), style: AppTextStyles.labelSmall),
                     const SizedBox(height: 6),
-                    Text(value, style: AppTextStyles.numberLarge),
+                    Text(value, style: AppTextStyles.headingLarge),
                   ],
                 ),
               ),
@@ -157,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
+                    padding: const EdgeInsets.only(top: 6),
                     children: [
                       _card(
                         title: "Sesiones restantes",
