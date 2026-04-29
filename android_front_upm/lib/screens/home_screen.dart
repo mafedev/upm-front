@@ -1,6 +1,8 @@
+import 'package:android_front_upm/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:android_front_upm/widgets/appbar.dart';
 import '../services/serial_service.dart';
+import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   final SerialService serial;
@@ -31,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
     )..forward();
 
     _loadData();
@@ -66,21 +68,32 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Widget _card(String title, String value, Color color, IconData icon, int i) {
-    final anim = CurvedAnimation(
+  Widget _card({
+    required String title,
+    required String value,
+    required Color color,
+    required IconData icon,
+    required int index,
+  }) {
+    final animation = CurvedAnimation(
       parent: _controller,
-      curve: Interval(0.2 * i, 1.0, curve: Curves.easeOut),
+      curve: Interval(0.15 * index, 1.0, curve: Curves.easeOut),
     );
 
     return FadeTransition(
-      opacity: anim,
+      opacity: animation,
       child: SlideTransition(
         position: Tween<Offset>(
-          begin: const Offset(0, 0.2),
+          begin: const Offset(0, 0.15),
           end: Offset.zero,
-        ).animate(anim),
+        ).animate(animation),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          margin: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: index == 0 ? 2 : 10,
+            bottom: 10,
+          ),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -88,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
-                blurRadius: 16,
+                blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
             ],
@@ -98,32 +111,19 @@ class _HomeScreenState extends State<HomeScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: color),
+                child: Icon(icon, color: color, size: 26),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
+                    Text(title.toUpperCase(), style: AppTextStyles.labelSmall),
                     const SizedBox(height: 6),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
+                    Text(value, style: AppTextStyles.numberLarge),
                   ],
                 ),
               ),
@@ -136,13 +136,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final connected = widget.serial.isConnected;
-
     return Column(
       children: [
         SystemAppBar(
           subtitle: "Sistema de monitorización Arduino",
+
           isConnected: widget.serial.isConnected,
+
           actions: [
             IconButton(
               icon: const Icon(Icons.sync, color: Colors.white),
@@ -153,96 +153,34 @@ class _HomeScreenState extends State<HomeScreen>
 
         Expanded(
           child: Container(
-            color: const Color(0xFFF4F7FB),
+            color: AppColors.background,
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
                     children: [
                       _card(
-                        "Sesiones restantes",
-                        sesiones.toString(),
-                        const Color(0xFF2563EB),
-                        Icons.timer,
-                        0,
+                        title: "Sesiones restantes",
+                        value: sesiones.toString(),
+                        color: AppColors.primary,
+                        icon: Icons.timer,
+                        index: 0,
                       ),
                       _card(
-                        "Total sesiones",
-                        total.toString(),
-                        const Color(0xFF16A34A),
-                        Icons.bar_chart,
-                        1,
+                        title: "Total sesiones",
+                        value: total.toString(),
+                        color: AppColors.success,
+                        icon: Icons.bar_chart,
+                        index: 1,
                       ),
                       _card(
-                        "Número de serie",
-                        serialNumber,
-                        const Color(0xFF7C3AED),
-                        Icons.qr_code,
-                        2,
+                        title: "Número de serie",
+                        value: serialNumber,
+                        color: AppColors.purple,
+                        icon: Icons.qr_code,
+                        index: 2,
                       ),
 
                       const SizedBox(height: 20),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          "ESTADO DEL SISTEMA",
-                          style: TextStyle(
-                            fontSize: 12,
-                            letterSpacing: 1.5,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.black.withOpacity(0.05),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              widget.serial.isConnected
-                                  ? Icons.check_circle
-                                  : Icons.error_outline,
-                              color: widget.serial.isConnected
-                                  ? const Color(0xFF16A34A)
-                                  : const Color(0xFFDC2626),
-                            ),
-
-                            const SizedBox(width: 10),
-
-                            Expanded(
-                              child: Text(
-                                widget.serial.isConnected
-                                    ? "Arduino conectado correctamente"
-                                    : "Arduino desconectado · modo lectura limitado",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 25),
                     ],
                   ),
           ),

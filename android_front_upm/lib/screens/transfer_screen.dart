@@ -1,7 +1,9 @@
-import 'package:android_front_upm/widgets/appbar.dart';
 import 'package:flutter/material.dart';
+import 'package:android_front_upm/widgets/appbar.dart';
 import '../services/serial_service.dart';
 import '../services/admin_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class TransferScreen extends StatefulWidget {
   final SerialService serialService;
@@ -34,10 +36,11 @@ class _TransferScreenState extends State<TransferScreen> {
       final serial = await widget.serialService.getSerial();
       final exists = await widget.api.deviceExists(serial);
 
+      arduinoSerial = serial;
+
       if (!exists) {
         _show("Dispositivo no registrado: $serial");
         setState(() {
-          arduinoSerial = serial;
           pending = 0;
           current = 0;
         });
@@ -48,7 +51,6 @@ class _TransferScreenState extends State<TransferScreen> {
       final arduinoSessions = await widget.serialService.getSessions();
 
       setState(() {
-        arduinoSerial = serial;
         pending = backendPending;
         current = arduinoSessions;
       });
@@ -85,7 +87,6 @@ class _TransferScreenState extends State<TransferScreen> {
       final total = backendPending + arduinoCurrent;
 
       await widget.serialService.loadSessions(total);
-
       await widget.api.confirmTransfer(arduinoSerial!);
 
       _show("Transferido correctamente: $total");
@@ -108,17 +109,15 @@ class _TransferScreenState extends State<TransferScreen> {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: Colors.black54),
+          Icon(icon, size: 22, color: AppColors.textMuted),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-          ),
+          Expanded(child: Text(label, style: AppTextStyles.bodySmall)),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -130,14 +129,13 @@ class _TransferScreenState extends State<TransferScreen> {
     final total = current + pending;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.background,
 
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: SystemAppBar(
           subtitle: "Transferencia de sesiones",
           isConnected: widget.serialService.isConnected,
-          showLogout: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.sync, color: Colors.white),
@@ -157,41 +155,42 @@ class _TransferScreenState extends State<TransferScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.08),
+                      color: AppColors.danger.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: Colors.blue),
+                        const Icon(Icons.info_outline, color: AppColors.danger),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            "Transferencia de sesiones al dispositivo.\nAntes de continuar, verifica que el dispositivo esté correctamente conectado.",
-                            style: TextStyle(
-                              color: Colors.blue.shade900,
-                              fontSize: 14,
-                            ),
+                            "Antes de continuar, verifica que el dispositivo esté correctamente conectado y que tengas una buena conexión a internet.",
+                            style: AppTextStyles.bodyMedium,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 20),
 
-                  const Text(
-                    "Estado actual",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Estado actual", style: AppTextStyles.headingSmall),
 
                   const SizedBox(height: 10),
 
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
@@ -200,21 +199,21 @@ class _TransferScreenState extends State<TransferScreen> {
                           arduinoSerial ?? "No detectado",
                           Icons.memory,
                         ),
-                        _rowItem("Sesiones en dispositivo", "$current", Icons.usb),
                         _rowItem(
-                          "Sesiones a cargar",
-                          "$pending",
-                          Icons.cloud,
+                          "Sesiones en dispositivo",
+                          "$current",
+                          Icons.usb,
                         ),
+                        _rowItem("Sesiones a cargar", "$pending", Icons.cloud),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  const Text(
+                  Text(
                     "Resultado de la transferencia",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.headingSmall,
                   ),
 
                   const SizedBox(height: 10),
@@ -223,23 +222,22 @@ class _TransferScreenState extends State<TransferScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.08),
+                      color: AppColors.infoBackground,
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.15),
+                      ),
                     ),
                     child: Column(
                       children: [
-                        const Text(
-                          "Total final",
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                        const SizedBox(height: 6),
                         Text(
-                          "$total",
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                          "Total final",
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textMuted,
                           ),
                         ),
+                        const SizedBox(height: 6),
+                        Text("$total", style: AppTextStyles.headingLarge),
                       ],
                     ),
                   ),
@@ -252,18 +250,17 @@ class _TransferScreenState extends State<TransferScreen> {
                     child: ElevatedButton(
                       onPressed: loading ? null : _transfer,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E88E5),
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "TRANSFERIR",
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
                           color: Colors.white,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
