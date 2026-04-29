@@ -1,5 +1,5 @@
-import 'package:android_front_upm/widgets/appbar.dart';
 import 'package:flutter/material.dart';
+import 'package:android_front_upm/widgets/appbar.dart';
 import '../services/serial_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,124 +16,119 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   int sesiones = 0;
   int total = 0;
   String serialNumber = "0";
 
   bool _loading = false;
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    if (!widget.serial.isConnected) return;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
+  Future<void> _loadData() async {
     setState(() => _loading = true);
 
     try {
-      final s = await widget.serial.getSessions();
-      final t = await widget.serial.getTotalSessions();
-      final sn = await widget.serial.getSerial();
+      if (widget.serial.isConnected) {
+        final s = await widget.serial.getSessions();
+        final t = await widget.serial.getTotalSessions();
+        final sn = await widget.serial.getSerial();
 
-      setState(() {
-        sesiones = s;
-        total = t;
-        serialNumber = sn;
-      });
+        setState(() {
+          sesiones = s;
+          total = t;
+          serialNumber = sn;
+        });
+      }
     } catch (e) {
-      print("Error cargando datos: $e");
+      debugPrint("Error: $e");
     } finally {
       setState(() => _loading = false);
+      _controller.forward(from: 0);
     }
   }
 
-  Widget _dataCard({
-    required String title,
-    required String value,
-    required VoidCallback onTap,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+  Widget _card(String title, String value, Color color, IconData icon, int i) {
+    final anim = CurvedAnimation(
+      parent: _controller,
+      curve: Interval(0.2 * i, 1.0, curve: Curves.easeOut),
+    );
 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+    return FadeTransition(
+      opacity: anim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.2),
+          end: Offset.zero,
+        ).animate(anim),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 26),
-            ),
-
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            ElevatedButton(
-              onPressed: onTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
-                ),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(icon, color: color),
               ),
-              child: const Text(
-                "VER",
-                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -141,55 +136,113 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final connected = widget.serial.isConnected;
+
     return Column(
       children: [
         SystemAppBar(
-          subtitle: widget.serial.isConnected
-              ? "Arduino Conectado"
-              : "No conectado",
-          showLogout: false,
-          onLogout: null,
+          subtitle: "Sistema de monitorización Arduino",
+          isConnected: widget.serial.isConnected,
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
+              icon: const Icon(Icons.sync, color: Colors.white),
               onPressed: _loadData,
-              tooltip: 'Refrescar',
             ),
           ],
         ),
+
         Expanded(
           child: Container(
-            color: const Color(0xFFF5F7FB),
+            color: const Color(0xFFF4F7FB),
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
                     children: [
-                      _dataCard(
-                        title: "Sesiones restantes",
-                        value: sesiones.toString(),
-                        onTap: _loadData,
-                        color: const Color(0xFF2563EB),
-                        icon: Icons.timer_outlined,
+                      _card(
+                        "Sesiones restantes",
+                        sesiones.toString(),
+                        const Color(0xFF2563EB),
+                        Icons.timer,
+                        0,
                       ),
-
-                      _dataCard(
-                        title: "Total sesiones",
-                        value: total.toString(),
-                        onTap: _loadData,
-                        color: const Color(0xFF16A34A),
-                        icon: Icons.stacked_bar_chart_outlined,
+                      _card(
+                        "Total sesiones",
+                        total.toString(),
+                        const Color(0xFF16A34A),
+                        Icons.bar_chart,
+                        1,
                       ),
-
-                      _dataCard(
-                        title: "Número de serie",
-                        value: serialNumber,
-                        onTap: _loadData,
-                        color: const Color(0xFF7C3AED),
-                        icon: Icons.qr_code_2_outlined,
+                      _card(
+                        "Número de serie",
+                        serialNumber,
+                        const Color(0xFF7C3AED),
+                        Icons.qr_code,
+                        2,
                       ),
 
                       const SizedBox(height: 20),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          "ESTADO DEL SISTEMA",
+                          style: TextStyle(
+                            fontSize: 12,
+                            letterSpacing: 1.5,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.black.withOpacity(0.05),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              widget.serial.isConnected
+                                  ? Icons.check_circle
+                                  : Icons.error_outline,
+                              color: widget.serial.isConnected
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFDC2626),
+                            ),
+
+                            const SizedBox(width: 10),
+
+                            Expanded(
+                              child: Text(
+                                widget.serial.isConnected
+                                    ? "Arduino conectado correctamente"
+                                    : "Arduino desconectado · modo lectura limitado",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
                     ],
                   ),
           ),

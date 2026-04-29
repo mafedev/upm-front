@@ -135,11 +135,9 @@ class _TransferScreenState extends State<TransferScreen> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: SystemAppBar(
-          subtitle: widget.serialService.isConnected
-              ? "Dispositivo Conectado"
-              : "No conectado",
+          subtitle: "Transferencia de sesiones",
+          isConnected: widget.serialService.isConnected,
           showLogout: false,
-          onLogout: null,
           actions: [
             IconButton(
               icon: const Icon(Icons.sync, color: Colors.white),
