@@ -4,12 +4,14 @@ class SystemAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String subtitle;
   final bool showLogout;
   final VoidCallback? onLogout;
+  final List<Widget>? actions;
 
   const SystemAppBar({
     super.key,
     required this.subtitle,
     this.showLogout = false,
     this.onLogout,
+    this.actions,
   });
 
   @override
@@ -66,6 +68,7 @@ class SystemAppBar extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
           ),
+          if (actions != null) ...actions!,
           if (showLogout)
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
