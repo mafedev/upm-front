@@ -103,75 +103,176 @@ class _TransferScreenState extends State<TransferScreen> {
     _loadData();
   }
 
+  Widget _rowItem(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: Colors.black54),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final total = current + pending;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F6FA),
+
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: SystemAppBar(
           subtitle: widget.serialService.isConnected
-              ? "Arduino Conectado"
+              ? "Dispositivo Conectado"
               : "No conectado",
           showLogout: false,
           onLogout: null,
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
+              icon: const Icon(Icons.sync, color: Colors.white),
               onPressed: loading ? null : _loadData,
-              tooltip: 'Refrescar',
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Serial Arduino:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.blue),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "Transferencia de sesiones al dispositivo.\nAntes de continuar, verifica que el dispositivo esté correctamente conectado.",
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(arduinoSerial ?? "No detectado"),
+
+                  const SizedBox(height: 25),
+
+                  const Text(
+                    "Estado actual",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        _rowItem(
+                          "Número serial",
+                          arduinoSerial ?? "No detectado",
+                          Icons.memory,
+                        ),
+                        _rowItem("Sesiones en dispositivo", "$current", Icons.usb),
+                        _rowItem(
+                          "Sesiones a cargar",
+                          "$pending",
+                          Icons.cloud,
+                        ),
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
 
-                  Text(
-                    "Sesiones en Arduino:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  const Text(
+                    "Resultado de la transferencia",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  Text("$current"),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
-                  Text(
-                    "Sesiones pendientes:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Total final",
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "$total",
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Text("$pending"),
 
-                  const SizedBox(height: 20),
-
-                  Text(
-                    "Total después de transferir:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text("${current + pending}"),
-
-                  const SizedBox(height: 40),
+                  const Spacer(),
 
                   SizedBox(
                     width: double.infinity,
+                    height: 55,
                     child: ElevatedButton(
                       onPressed: loading ? null : _transfer,
-                      child: const Text("TRANSFERIR"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E88E5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        "TRANSFERIR",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-      ),
+            ),
     );
   }
 }
