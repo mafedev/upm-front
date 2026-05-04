@@ -18,56 +18,60 @@ class SerialService {
 
   bool get isConnected => _isConnected;
 
-  // ---------------- CONNECT ----------------
+  Timer? _reconnectTimer;
 
   Future<void> connect() async {
-    List<UsbDevice> devices = await UsbSerial.listDevices();
+    try {
+      List<UsbDevice> devices = await UsbSerial.listDevices();
 
-    if (devices.isEmpty) {
+      if (devices.isEmpty) {
+        _setDisconnected();
+        return;
+      }
+
+      UsbDevice device = devices.first;
+
+      _port = await device.create();
+
+      if (_port == null) {
+        _setDisconnected();
+        return;
+      }
+
+      bool openResult = await _port!.open();
+
+      if (!openResult) {
+        _setDisconnected();
+        return;
+      }
+
+      await _port!.setDTR(true);
+      await _port!.setRTS(true);
+
+      await _port!.setPortParameters(
+        9600,
+        UsbPort.DATABITS_8,
+        UsbPort.STOPBITS_1,
+        UsbPort.PARITY_NONE,
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      _transaction = Transaction.stringTerminated(
+        _port!.inputStream!,
+        Uint8List.fromList([10]), // '\n'
+      );
+
+      _subscription = _transaction!.stream.listen((data) {
+        _dataController.add(data);
+      });
+
+      _isConnected = true;
+      _connectionController.add(true);
+    } catch (e) {
       _setDisconnected();
-      return;
     }
-
-    UsbDevice device = devices.first;
-
-    _port = await device.create();
-
-    if (_port == null) {
-      _setDisconnected();
-      return;
-    }
-
-    bool openResult = await _port!.open();
-
-    if (!openResult) {
-      _setDisconnected();
-      return;
-    }
-
-    await _port!.setDTR(true);
-    await _port!.setRTS(true);
-
-    await _port!.setPortParameters(
-      9600,
-      UsbPort.DATABITS_8,
-      UsbPort.STOPBITS_1,
-      UsbPort.PARITY_NONE,
-    );
-
-    _transaction = Transaction.stringTerminated(
-      _port!.inputStream!,
-      Uint8List.fromList([10]), // '\n'
-    );
-
-    _subscription = _transaction!.stream.listen((data) {
-      _dataController.add(data);
-    });
-
-    _isConnected = true;
-    _connectionController.add(true);
   }
-
-  // ---------------- DISCONNECT ----------------
 
   Future<void> disconnect() async {
     await _subscription?.cancel();
@@ -82,18 +86,80 @@ class SerialService {
     _connectionController.add(false);
   }
 
-  // ---------------- SEND ----------------
-
   Future<void> send(String command) async {
-    if (_port == null || !_isConnected) return;
+    if (_port == null || !_isConnected) {
+      throw Exception("Arduino not connected");
+    }
 
     String fullCommand = "$command\n";
-    _port!.write(Uint8List.fromList(fullCommand.codeUnits));
+    await _port!.write(Uint8List.fromList(fullCommand.codeUnits));
   }
 
-  // ---------------- AUTO RECONNECT ----------------
+  Future<String> waitForResponse({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    try {
+      String response = await dataStream.first.timeout(timeout);
+      return response;
+    } catch (e) {
+      throw Exception("Timeout esperando respuesta del Arduino");
+    }
+  }
 
-  Timer? _reconnectTimer;
+  Future<int> getSessions() async {
+    await send("2");
+
+    String response = await waitForResponse();
+
+    final match = RegExp(r'(\d+)').firstMatch(response);
+
+    if (match != null) {
+      return int.parse(match.group(1)!);
+    }
+
+    throw Exception("Respuesta inválida: $response");
+  }
+
+  Future<String> getSerial() async {
+    await send("3");
+
+    String response = await waitForResponse();
+
+    return response.split(":").last.trim();
+  }
+
+  Future<void> loadSessions(int amount) async {
+    await send("1");
+    await waitForResponse();
+
+    await send(amount.toString());
+
+    await waitForResponse();
+  }
+
+  Future<void> setSerial(String serial) async {
+    await send("4");
+
+    await waitForResponse();
+
+    await send(serial);
+
+    await waitForResponse();
+  }
+
+  Future<int> getTotalSessions() async {
+    await send("5");
+
+    String response = await waitForResponse();
+
+    final match = RegExp(r'(\d+)').firstMatch(response);
+
+    if (match != null) {
+      return int.parse(match.group(1)!);
+    }
+
+    throw Exception("Respuesta inválida");
+  }
 
   void startAutoConnect() {
     _reconnectTimer?.cancel();
@@ -108,8 +174,6 @@ class SerialService {
   void stopAutoConnect() {
     _reconnectTimer?.cancel();
   }
-
-  // ---------------- DISPOSE ----------------
 
   void dispose() {
     disconnect();
