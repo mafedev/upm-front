@@ -1,7 +1,13 @@
-import 'package:android_front_upm/widgets/appbar.dart';
+import 'package:android_front_upm/widgets/buttons/primary_button.dart';
+import 'package:android_front_upm/widgets/cards/app_stat_card.dart';
+import 'package:android_front_upm/widgets/cards/info_box.dart';
+import 'package:android_front_upm/widgets/row_item.dart';
 import 'package:flutter/material.dart';
+import 'package:android_front_upm/widgets/appbar.dart';
 import '../services/serial_service.dart';
 import '../services/admin_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class TransferScreen extends StatefulWidget {
   final SerialService serialService;
@@ -34,10 +40,11 @@ class _TransferScreenState extends State<TransferScreen> {
       final serial = await widget.serialService.getSerial();
       final exists = await widget.api.deviceExists(serial);
 
+      arduinoSerial = serial;
+
       if (!exists) {
         _show("Dispositivo no registrado: $serial");
         setState(() {
-          arduinoSerial = serial;
           pending = 0;
           current = 0;
         });
@@ -48,7 +55,6 @@ class _TransferScreenState extends State<TransferScreen> {
       final arduinoSessions = await widget.serialService.getSessions();
 
       setState(() {
-        arduinoSerial = serial;
         pending = backendPending;
         current = arduinoSessions;
       });
@@ -85,7 +91,6 @@ class _TransferScreenState extends State<TransferScreen> {
       final total = backendPending + arduinoCurrent;
 
       await widget.serialService.loadSessions(total);
-
       await widget.api.confirmTransfer(arduinoSerial!);
 
       _show("Transferido correctamente: $total");
@@ -105,73 +110,106 @@ class _TransferScreenState extends State<TransferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final total = current + pending;
+    final isConnected = widget.serialService.isConnected;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
+
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: SystemAppBar(
-          subtitle: widget.serialService.isConnected
-              ? "Arduino Conectado"
-              : "No conectado",
-          showLogout: false,
-          onLogout: null,
+          subtitle: "Transferencia de sesiones",
+          isConnected: isConnected,
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
+              icon: const Icon(Icons.sync, color: Colors.white),
               onPressed: loading ? null : _loadData,
-              tooltip: 'Refrescar',
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Serial Arduino:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  AppInfoBanner(
+                    text:
+                        "Antes de continuar, verifica que el dispositivo esté correctamente conectado y que tengas una buena conexión a internet.",
+                    icon: Icons.info_outline,
+                    color: AppColors.danger,
                   ),
-                  Text(arduinoSerial ?? "No detectado"),
 
                   const SizedBox(height: 20),
 
-                  Text(
-                    "Sesiones en Arduino:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text("$current"),
+                  Text("Estado actual", style: AppTextStyles.headingSmall),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
-                  Text(
-                    "Sesiones pendientes:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text("$pending"),
-
-                  const SizedBox(height: 20),
-
-                  Text(
-                    "Total después de transferir:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text("${current + pending}"),
-
-                  const SizedBox(height: 40),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : _transfer,
-                      child: const Text("TRANSFERIR"),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
+                    child: Column(
+                      children: [
+                        AppRowItem(
+                          label: "Número serial",
+                          value: arduinoSerial ?? "No detectado",
+                          icon: Icons.memory,
+                        ),
+                        AppRowItem(
+                          label: "Sesiones en dispositivo",
+                          value: "$current",
+                          icon: Icons.usb,
+                        ),
+                        AppRowItem(
+                          label: "Sesiones a cargar",
+                          value: "$pending",
+                          icon: Icons.cloud,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "Resultado de la transferencia",
+                    style: AppTextStyles.headingSmall,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  AppStatCard(
+                    title: "Total final",
+                    value: "$total",
+                    icon: Icons.bar_chart,
+                    color: AppColors.primary,
+                  ),
+
+                  const Spacer(),
+                  
+                  PrimaryButton(
+                    text: "TRANSFERIR",
+                    loading: loading,
+                    onPressed: _transfer,
                   ),
                 ],
               ),
-      ),
+            ),
     );
   }
 }
