@@ -1,0 +1,6 @@
+# -------------------------------------------------------------
+# Archivo de ejemplo .env para windows_front_upm
+# Agregue los valores reales antes de desplegar
+# -------------------------------------------------------------
+BASE_URL=
+API_TOKEN=
