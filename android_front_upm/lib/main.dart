@@ -10,12 +10,12 @@ import 'widgets/navbar.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env"); // Carga las variables de entorno
 
   final serialService = SerialService();
-  serialService.startAutoConnect();
+  serialService.startAutoConnect(); // Inicia la conexión automática al Arduino
 
-  final adminService = SessionService(baseUrl: dotenv.env['BASE_URL']!);
+  final adminService = SessionService(baseUrl: dotenv.env['BASE_URL']!); // Usa la URL del backend desde las variables de entorno
 
   runApp(MyApp(serialService: serialService, adminService: adminService));
 }
@@ -65,8 +65,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-  bool _arduinoConnected = false;
+  int _currentIndex = 0; // Índice para controlar la pantalla actual
+  bool _arduinoConnected = false; // Estado de conexión con el Arduino
 
   @override
   void initState() {
@@ -80,6 +80,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Lista de pantallas
     final screens = [
       HomeScreen(
         serial: widget.serialService,
@@ -87,7 +88,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       TransferScreen(
         serialService: widget.serialService,
-        api: widget.adminService,
+        sessionService: widget.adminService,
       ),
     ];
 

@@ -4,50 +4,52 @@ import 'package:usb_serial/usb_serial.dart';
 import 'package:usb_serial/transaction.dart';
 
 class SerialService {
-  UsbPort? _port;
-  StreamSubscription<String>? _subscription;
-  Transaction<String>? _transaction;
+  UsbPort? _port; // puerto serial conectado al Arduino
+  StreamSubscription<String>? _subscription; // suscripción al stream de datos del puerto
+  Transaction<String>? _transaction; // transacción para leer datos terminados en '\n'
 
-  final StreamController<String> _dataController = StreamController.broadcast();
-  final StreamController<bool> _connectionController = StreamController.broadcast();
+  final StreamController<String> _dataController = StreamController.broadcast(); // controlador para emitir datos recibidos del Arduino
+  final StreamController<bool> _connectionController = StreamController.broadcast(); // controlador para emitir cambios en el estado de conexión
 
   Stream<String> get dataStream => _dataController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
 
-  bool _isConnected = false;
+  bool _isConnected = false; // estado de conexión actual
+  bool get isConnected => _isConnected; // getter para el estado de conexión
+  Timer? _reconnectTimer; // temporizador para intentar reconectar automáticamente
 
-  bool get isConnected => _isConnected;
-
-  Timer? _reconnectTimer;
-
+  // ------------------- Conexión y comunicación con el Arduino ------------------
   Future<void> connect() async {
     try {
-      List<UsbDevice> devices = await UsbSerial.listDevices();
+      List<UsbDevice> devices = await UsbSerial.listDevices(); // lista de dispositivos USB conectados
 
+      // Si no se encuentra ningún dispositivo, se considera que no hay conexión
       if (devices.isEmpty) {
         _setDisconnected();
         return;
       }
 
-      UsbDevice device = devices.first;
+      UsbDevice device = devices.first; // se toma el primer dispositivo encontrado (se asume que es el Arduino)
+      _port = await device.create(); // se crea un puerto para comunicarse con el dispositivo
 
-      _port = await device.create();
-
+      // Si no se pudo crear el puerto, se considera que no hay conexión
       if (_port == null) {
         _setDisconnected();
         return;
       }
 
-      bool openResult = await _port!.open();
+      bool openResult = await _port!.open(); // se intenta abrir el puerto para establecer la conexión
 
+      // Si no se pudo abrir el puerto, se considera que no hay conexión
       if (!openResult) {
         _setDisconnected();
         return;
       }
 
-      await _port!.setDTR(true);
-      await _port!.setRTS(true);
+      await _port!.setDTR(true); // se activa la señal DTR para resetear el Arduino
+      await _port!.setRTS(true); // se activa la señal RTS
 
+      // Se configuran los parámetros de comunicación: velocidad de 9600 baudios, 8 bits de datos, 1 bit de parada, sin paridad
       await _port!.setPortParameters(
         9600,
         UsbPort.DATABITS_8,
@@ -55,10 +57,11 @@ class SerialService {
         UsbPort.PARITY_NONE,
       );
 
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2)); // se espera un tiempo para que el Arduino se reinicie y esté listo para comunicarse
 
+      // Se crea una transacción para leer datos del puerto que estén terminados en '\n'
       _transaction = Transaction.stringTerminated(
-        _port!.inputStream!,
+        _port!.inputStream!, // se utiliza el stream de entrada del puerto
         Uint8List.fromList([10]), // '\n'
       );
 
@@ -73,6 +76,7 @@ class SerialService {
     }
   }
 
+  // ------------------- Desconexión y limpieza de recursos ------------------
   Future<void> disconnect() async {
     await _subscription?.cancel();
     _transaction?.dispose();
@@ -81,11 +85,13 @@ class SerialService {
     _setDisconnected();
   }
 
+  // Establece el estado de desconexión y emite un evento para notificar a los listeners
   void _setDisconnected() {
     _isConnected = false;
     _connectionController.add(false);
   }
 
+  // ------------------- Envío de comandos al arduino -------------------
   Future<void> send(String command) async {
     if (_port == null || !_isConnected) {
       throw Exception("Arduino not connected");
@@ -95,6 +101,7 @@ class SerialService {
     await _port!.write(Uint8List.fromList(fullCommand.codeUnits));
   }
 
+  // ------------------- Esperar respuesta del arduino -------------------
   Future<String> waitForResponse({
     Duration timeout = const Duration(seconds: 3),
   }) async {
@@ -106,6 +113,7 @@ class SerialService {
     }
   }
 
+  // ------------------- Obtener sesiones del arduino -------------------
   Future<int> getSessions() async {
     await send("2");
 
@@ -120,6 +128,7 @@ class SerialService {
     throw Exception("Respuesta inválida: $response");
   }
 
+  // ------------------- Obtener número de serie del arduino -------------------
   Future<String> getSerial() async {
     await send("3");
 
@@ -128,6 +137,7 @@ class SerialService {
     return response.split(":").last.trim();
   }
 
+  // ------------------- Cargar sesiones en el arduino -------------------
   Future<void> loadSessions(int amount) async {
     await send("1");
     await waitForResponse();
@@ -137,6 +147,7 @@ class SerialService {
     await waitForResponse();
   }
 
+  // ------------------- Establecer número de serie en el arduino -------------------
   Future<void> setSerial(String serial) async {
     await send("4");
 
@@ -147,6 +158,7 @@ class SerialService {
     await waitForResponse();
   }
 
+  // ------------------- Obtener total de sesiones del arduino -------------------
   Future<int> getTotalSessions() async {
     await send("5");
 
@@ -161,6 +173,7 @@ class SerialService {
     throw Exception("Respuesta inválida");
   }
 
+  // ------------------- Reconexión automática -------------------
   void startAutoConnect() {
     _reconnectTimer?.cancel();
 
