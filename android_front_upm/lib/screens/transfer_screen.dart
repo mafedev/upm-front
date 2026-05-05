@@ -1,3 +1,4 @@
+import 'package:android_front_upm/services/session_service.dart';
 import 'package:android_front_upm/widgets/buttons/primary_button.dart';
 import 'package:android_front_upm/widgets/cards/app_stat_card.dart';
 import 'package:android_front_upm/widgets/cards/info_box.dart';
@@ -5,13 +6,12 @@ import 'package:android_front_upm/widgets/row_item.dart';
 import 'package:flutter/material.dart';
 import 'package:android_front_upm/widgets/appbar.dart';
 import '../services/serial_service.dart';
-import '../services/admin_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 class TransferScreen extends StatefulWidget {
   final SerialService serialService;
-  final AdminService api;
+  final SessionService api;
 
   const TransferScreen({
     super.key,

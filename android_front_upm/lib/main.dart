@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'services/serial_service.dart';
-import 'services/admin_service.dart';
+import 'services/session_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/transfer_screen.dart';
 import 'widgets/navbar.dart';
@@ -15,14 +15,14 @@ Future<void> main() async {
   final serialService = SerialService();
   serialService.startAutoConnect();
 
-  final adminService = AdminService(baseUrl: dotenv.env['BASE_URL']!);
+  final adminService = SessionService(baseUrl: dotenv.env['BASE_URL']!);
 
   runApp(MyApp(serialService: serialService, adminService: adminService));
 }
 
 class MyApp extends StatelessWidget {
   final SerialService serialService;
-  final AdminService adminService;
+  final SessionService adminService;
 
   const MyApp({
     super.key,
@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   final SerialService serialService;
-  final AdminService adminService;
+  final SessionService adminService;
 
   const MainScreen({
     super.key,

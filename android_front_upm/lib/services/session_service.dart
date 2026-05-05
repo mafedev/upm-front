@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class AdminService {
+class SessionService {
   final String baseUrl;
 
-  AdminService({required this.baseUrl});
+  SessionService({required this.baseUrl});
 
   Map<String, String> get _headers => {"Content-Type": "application/json"};
 
