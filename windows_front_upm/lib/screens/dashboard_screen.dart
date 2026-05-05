@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:windows_front_upm/theme/app_colors.dart';
 import '../services/admin_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -11,8 +12,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final Color transferButtonColor = Color.fromARGB(255, 79, 71, 99);
-  final Color createButtonColor = Color(0xFF009688);
   List<Map<String, dynamic>> devices = [];
 
   String? selectedSerial;
@@ -170,7 +169,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.background,
 
       appBar: AppBar(
         title: const Text("CTB-UPM"),
@@ -235,9 +234,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        (d['ownerName'] != null && d['ownerName'].toString().isNotEmpty)
-                                            ? d['ownerName'].toString()[0].toUpperCase() +
-                                                d['ownerName'].toString().substring(1)
+                                        (d['ownerName'] != null &&
+                                                d['ownerName']
+                                                    .toString()
+                                                    .isNotEmpty)
+                                            ? d['ownerName']
+                                                      .toString()[0]
+                                                      .toUpperCase() +
+                                                  d['ownerName']
+                                                      .toString()
+                                                      .substring(1)
                                             : '',
                                         style: const TextStyle(
                                           color: Colors.white54,
@@ -274,7 +280,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: createButtonColor,
+                                  backgroundColor: AppColors.button,
                                   padding: const EdgeInsets.all(14),
                                   foregroundColor: Colors.white,
                                 ),
@@ -298,7 +304,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                 Expanded(
                   child: Container(
-                    color: const Color(0xFFF1F3F7),
+                    color: AppColors.background,
                     child: selectedSerial == null
                         ? const Center(
                             child: Text(
@@ -314,7 +320,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(18),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppColors.card,
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: const [
                                       BoxShadow(
@@ -372,7 +378,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(18),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: AppColors.card,
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: const [
                                         BoxShadow(
@@ -410,7 +416,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(18),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppColors.card,
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: const [
                                       BoxShadow(
@@ -479,7 +485,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(18),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppColors.card,
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: const [
                                       BoxShadow(
@@ -503,7 +509,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                                       const SizedBox(height: 10),
 
-                                     SizedBox(
+                                      SizedBox(
                                         height: 300,
                                         child: ListView.builder(
                                           itemCount: history.length,
@@ -553,7 +559,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                               ),
                                               padding: const EdgeInsets.all(10),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFF8FAFC),
+                                                color: AppColors.cardHistory,
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                                 border: Border.all(
