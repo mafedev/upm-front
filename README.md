@@ -15,7 +15,7 @@ Funcionalidades principales:
 - Interfaz optimizada para uso móvil
 
 Documentación:
-La documentación específica del proyecto Android se encuentra en: android_front_upm\README.md
+La documentación específica del proyecto Android se encuentra en: [Android README.md](./android_front_upm/README.md)
 
 
 ## 2. Windows Front (windows_front_upm)
@@ -29,7 +29,7 @@ Está enfocada en la administración completa del sistema, gestión de dispositi
 - Gestión de sesiones y recargas
 - Historial de actividad por dispositivo
 
-La documentación específica del proyecto Windows se encuentra en: windows_front_upm\README.md
+La documentación específica del proyecto Windows se encuentra en: [Windows README.md](./windows_front_upm/README.md)
 
 
 ## Notas
