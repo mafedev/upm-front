@@ -6,12 +6,14 @@ class SessionService {
 
   SessionService({required this.baseUrl});
 
-  Map<String, String> get _headers => {"Content-Type": "application/json"};
+  Map<String, String> get _headers => {"Content-Type": "application/json"}; // Encabezados comunes para las solicitudes HTTP
 
+  // Maneja errores HTTP lanzando una excepción con el código de estado y el cuerpo de la respuesta
   void _handleError(http.Response res) {
     throw Exception("HTTP ${res.statusCode}: ${res.body}");
   }
 
+  // Verifica si un dispositivo con el número de serie dado existe en el sistema
   Future<bool> deviceExists(String serial) async {
     final url = '$baseUrl/api/device/status/$serial';
 
@@ -24,6 +26,7 @@ class SessionService {
     return false;
   }
 
+  // Obtiene el número de sesiones pendientes para un dispositivo con el número de serie dado
   Future<int> getPendingSessions(String serial) async {
     final url = '$baseUrl/api/device/sessions/pending/$serial';
 
@@ -36,6 +39,7 @@ class SessionService {
     return int.tryParse(res.body) ?? 0;
   }
 
+  // Confirma la transferencia de un dispositivo con el número de serie dado
   Future<void> confirmTransfer(String serial) async {
     final url = '$baseUrl/api/device/transfer';
 

@@ -6,7 +6,7 @@ import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   final SerialService serial;
-  final bool arduinoConnected;
+  final bool arduinoConnected; // Indica si el Arduino está conectado
 
   const HomeScreen({
     super.key,
@@ -20,23 +20,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  int sesiones = 0;
+  int sesiones = 0; // sesiones restantes en el Arduino
   int total = 0;
-  String serialNumber = "0";
+  String serialNumber = "0"; // Número de serie del Arduino
 
-  bool _loading = false;
-  late AnimationController _controller;
+  bool _loading = false; // Indica si se están cargando los datos
+  late AnimationController
+  _controller; // Controlador de animación para las tarjetas
 
   @override
   void initState() {
     super.initState();
 
+    // Inicializa el controlador de animación con una duración de 800ms
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
 
-    _loadData();
+    _loadData(); // Carga los datos al iniciar la pantalla
   }
 
   @override
@@ -46,14 +48,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadData() async {
-    setState(() => _loading = true);
+    setState(() => _loading = true); // Muestra el indicador de carga
 
     try {
-      if (widget.serial.isConnected) {
+      if (widget.serial.isConnected) { // Solo intenta cargar los datos si el Arduino está conectado
         final s = await widget.serial.getSessions();
         final t = await widget.serial.getTotalSessions();
         final sn = await widget.serial.getSerial();
 
+        // Actualiza el estado con los datos obtenidos
         setState(() {
           sesiones = s;
           total = t;
@@ -140,9 +143,7 @@ class _HomeScreenState extends State<HomeScreen>
       children: [
         SystemAppBar(
           subtitle: "Sistema de monitorización Arduino",
-
           isConnected: widget.serial.isConnected,
-
           actions: [
             IconButton(
               icon: const Icon(Icons.sync, color: Colors.white),

@@ -10,13 +10,13 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 class TransferScreen extends StatefulWidget {
-  final SerialService serialService;
-  final SessionService api;
+  final SerialService serialService; // Maneja la comunicación serial con el dispositivo
+  final SessionService sessionService; // Maneja las sesiones en el backend
 
   const TransferScreen({
     super.key,
     required this.serialService,
-    required this.api,
+    required this.sessionService,
   });
 
   @override
@@ -26,22 +26,24 @@ class TransferScreen extends StatefulWidget {
 class _TransferScreenState extends State<TransferScreen> {
   bool loading = false;
   String? arduinoSerial;
-  int pending = 0;
-  int current = 0;
+  int pending = 0; // Sesiones pendientes en el backend
+  int current = 0; // Sesiones actualmente en el dispositivo
 
   void _show(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  // ---------- Carga los datos iniciales del dispositivo y el backend ----------
   Future<void> _loadData() async {
     try {
       setState(() => loading = true);
 
-      final serial = await widget.serialService.getSerial();
-      final exists = await widget.api.deviceExists(serial);
+      final serial = await widget.serialService.getSerial(); // Obtiene el número serial del dispositivo conectado
+      final exists = await widget.sessionService.deviceExists(serial); // Verifica si el dispositivo está registrado en el backend
 
-      arduinoSerial = serial;
+      arduinoSerial = serial; // Actualiza el número serial en el estado
 
+      // Si el dispositivo no existe en el backend, muestra un mensaje de error y resetea los contadores
       if (!exists) {
         _show("Dispositivo no registrado: $serial");
         setState(() {
@@ -51,52 +53,57 @@ class _TransferScreenState extends State<TransferScreen> {
         return;
       }
 
-      final backendPending = await widget.api.getPendingSessions(serial);
-      final arduinoSessions = await widget.serialService.getSessions();
+      final backendPending = await widget.sessionService.getPendingSessions(serial); // Obtiene el número de sesiones pendientes en el backend
+      final arduinoSessions = await widget.serialService.getSessions(); // Obtiene el número de sesiones en el dispositivo
 
+      // Actualiza el estado con los datos obtenidos
       setState(() {
         pending = backendPending;
         current = arduinoSessions;
       });
     } catch (e) {
-      _show("Error cargando datos: $e");
+      _show("Error cargando datos");
     } finally {
       setState(() => loading = false);
     }
   }
 
+  // ---------- Realiza la transferencia de sesiones entre el backend y el dispositivo ----------
   Future<void> _transfer() async {
     if (arduinoSerial == null) return;
 
     try {
       setState(() => loading = true);
 
-      final exists = await widget.api.deviceExists(arduinoSerial!);
+      final exists = await widget.sessionService.deviceExists(arduinoSerial!); // Verifica nuevamente si el dispositivo existe en el backend antes de transferir
       if (!exists) {
-        _show("Dispositivo no válido");
+        _show("Dispositivo no válido"); // si el dispositivo no existe, muestra un mensaje de error y detiene la transferencia
         return;
       }
 
-      final backendPending = await widget.api.getPendingSessions(
+      // Obtiene el número de sesiones pendientes en el backend para el dispositivo conectado
+      final backendPending = await widget.sessionService.getPendingSessions(
         arduinoSerial!,
       );
 
+      // Si no hay sesiones pendientes en el backend, muestra un mensaje y detiene la transferencia
       if (backendPending <= 0) {
         _show("No hay sesiones pendientes");
         return;
       }
 
-      final arduinoCurrent = await widget.serialService.getSessions();
+      final arduinoCurrent = await widget.serialService.getSessions(); // Obtiene el número de sesiones actualmente en el dispositivo
 
+      // Calcula el total de sesiones que se transferirán sumando las sesiones pendientes en el backend y las sesiones actuales en el dispositivo
       final total = backendPending + arduinoCurrent;
 
       await widget.serialService.loadSessions(total);
-      await widget.api.confirmTransfer(arduinoSerial!);
+      await widget.sessionService.confirmTransfer(arduinoSerial!);
 
       _show("Transferido correctamente: $total");
       await _loadData();
     } catch (e) {
-      _show("Error en transferencia: $e");
+      _show("Error en transferencia");
     } finally {
       setState(() => loading = false);
     }
@@ -201,7 +208,7 @@ class _TransferScreenState extends State<TransferScreen> {
                   ),
 
                   const Spacer(),
-                  
+
                   PrimaryButton(
                     text: "TRANSFERIR",
                     loading: loading,
