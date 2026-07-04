@@ -8,6 +8,14 @@ Este repositorio contiene dos proyectos principales que forman parte del sistema
 Aplicación móvil desarrollada en Flutter para dispositivos Android.  
 Permite la interacción con arduinos, gestión de sesiones y transferencia de datos
 
+
+<div align="center">
+ <img width="300" alt="image" src="https://github.com/user-attachments/assets/3a101e42-d9c4-4623-a0b0-8500fc4b3ad4" />
+ <img width="300" alt="image" src="https://github.com/user-attachments/assets/08fd4cf4-e602-4f86-86ca-9a763f06ee62" />
+</div>
+</br>
+</br>
+
 Funcionalidades principales:
 - Conexión con dispositivos Arduino
 - Visualización de sesiones activas y totales
@@ -22,6 +30,13 @@ La documentación específica del proyecto Android se encuentra en: [Android REA
 
 Aplicación de escritorio desarrollada para Windows.  
 Está enfocada en la administración completa del sistema, gestión de dispositivos y control de usuarios.
+
+<div align="center">
+ <img width="700" alt="image" src="https://github.com/user-attachments/assets/517f181a-13e3-4662-bb6c-43f252ce3b70" />
+</div>
+
+</br>
+</br>
 
  Funcionalidades principales:
 - Panel de administración de dispositivos
